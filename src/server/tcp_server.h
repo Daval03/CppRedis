@@ -6,6 +6,7 @@
 #include <atomic>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -22,6 +23,8 @@ private:
 
     void acceptConnections();
     void handleClient(int client_socket);
+    std::string processRedisCommand(const std::vector<std::string>& args);
+    std::vector<std::string> parseRESP(const std::string& input);
 
 public:
     TCPServer(int port = 6379);

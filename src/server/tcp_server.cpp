@@ -42,7 +42,9 @@ void TCPServer::start() {
 
     running = true;
     std::cout << "Server started on port " << port << std::endl;
-    
+    std::cout << "Redis server started on port " << port << std::endl;
+    std::cout << "Use: redis-cli -p " << port << " or telnet localhost " << port << std::endl;
+
     acceptConnections();
 }
 
@@ -64,7 +66,7 @@ void TCPServer::stop() {
     }
     client_threads.clear();
     
-    std::cout << "Server stopped" << std::endl;
+    std::cout << "Redis server stopped" << std::endl;
 }
 
 void TCPServer::acceptConnections() {
@@ -90,8 +92,108 @@ void TCPServer::acceptConnections() {
     }
 }
 
+std::string TCPServer::processRedisCommand(const std::vector<std::string>& args) {
+    if (args.empty()) {
+        return "";
+    }
+    
+    std::string cmd = args[0];
+    
+    // Convert to uppercase for case-insensitive comparison
+    for (char& c : cmd) {
+        c = std::toupper(c);
+    }
+    
+    if (cmd == "PING") {
+        return "+PONG\r\n";
+    }
+    else if (cmd == "COMMAND") {
+        return "*0\r\n";
+    }
+    else if (cmd == "QUIT") {
+        return "+OK\r\n";
+    }
+    else if (cmd == "ECHO") {
+        if (args.size() < 2) {
+            return "-ERR wrong number of arguments for 'echo' command\r\n";
+        }
+        
+        // Linking all args of ECHO
+        std::string message;
+        for (size_t i = 1; i < args.size(); ++i) {
+            if (i > 1) message += " ";  // Adding space between arg
+            message += args[i];
+        }
+        
+        return "$" + std::to_string(message.length()) + "\r\n" + message + "\r\n";
+    }
+    else {
+        return "-ERR unknown command '" + cmd + "'\r\n";
+    }
+}
+
+std::vector<std::string> TCPServer::parseRESP(const std::string& input) {
+    std::vector<std::string> result;
+    
+    if (input.empty() || input[0] != '*') {
+        // Fallback for commands of flat text
+        std::istringstream iss(input);
+        std::string token;
+        while (iss >> token) {
+            result.push_back(token);
+        }
+        return result;
+    }
+
+    std::istringstream ss(input);
+    std::string line;
+    
+    // Read first line *<num>
+    if (!std::getline(ss, line)) return result;
+    
+    if (line.empty() || line[0] != '*') return result;
+    
+    // Extracting all args
+    int num_args;
+    try {
+        num_args = std::stoi(line.substr(1));
+    } catch (...) {
+        return result;
+    }
+    
+    // Read each arg
+    for (int i = 0; i < num_args; ++i) {
+        if (!std::getline(ss, line)) break;
+        
+        if (line.empty() || line[0] != '$') break;
+        
+        int len;
+        try {
+            len = std::stoi(line.substr(1));
+        } catch (...) {
+            break;
+        }
+        
+        // Read content of arg
+        if (!std::getline(ss, line)) break;
+       
+        // Remove \r 
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        
+        result.push_back(line);
+    }
+    
+    return result;
+}
+
 void TCPServer::handleClient(int client_socket) {
     char buffer[1024] = {0};
+    
+    // Send Redis welcome message (similar to real Redis)
+    std::string welcome = "+OK Redis mock server ready\r\n";
+    send(client_socket, welcome.c_str(), welcome.length(), 0);
     
     while (running) {
         // Read data from client
@@ -99,38 +201,34 @@ void TCPServer::handleClient(int client_socket) {
         
         if (bytes_read <= 0) {
             if (bytes_read == 0) {
-                std::cout << "Client disconnected gracefully" << std::endl;
+                std::cout << "Redis client disconnected" << std::endl;
             } else {
                 std::cerr << "Read error: " << strerror(errno) << std::endl;
             }
-            break; // Client disconnected or error occurred
+            break;
         }
 
         buffer[bytes_read] = '\0';
+        std::string received_data(buffer);
         
-        // Remove newline characters for cleaner output
-        std::string message(buffer);
-        if (!message.empty() && message.back() == '\n') {
-            message.pop_back();
-        }
-        if (!message.empty() && message.back() == '\r') {
-            message.pop_back();
-        }
+        std::cout << "Received Redis command: " << received_data;
         
-        std::cout << "Received from client: '" << message << "'" << std::endl;
-
-        // Echo back to client
-        std::string response = "Echo: " + message + "\n";
-        if (send(client_socket, response.c_str(), response.length(), 0) < 0) {
-            std::cerr << "Send failed: " << strerror(errno) << std::endl;
-            break;
-        }
-
-        // Check for exit command
-        if (message == "exit" || message == "quit") {
-            std::string goodbye = "Goodbye!\n";
-            send(client_socket, goodbye.c_str(), goodbye.length(), 0);
-            break;
+        // Process the Redis command
+        std::vector<std::string> args = parseRESP(received_data);
+        std::string response = processRedisCommand(args);
+        
+        if (!response.empty()) {
+            if (send(client_socket, response.c_str(), response.length(), 0) < 0) {
+                std::cerr << "Send failed: " << strerror(errno) << std::endl;
+                break;
+            }
+            
+            std::cout << "Sent response: " << response;
+            
+            // Check for QUIT command to close connection
+            if (!args.empty() && args[0] == "QUIT") {
+                break;
+            }
         }
     }
 
