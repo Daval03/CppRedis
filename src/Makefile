@@ -13,8 +13,12 @@ SERVER_DIR = server
 # Archivos fuente
 SRCS = $(SRC_DIR)/main.cpp \
         $(SERVER_DIR)/tcp_server.cpp \
-#        $(SERVER_DIR)/command_parser.cpp \
-        $(SERVER_DIR)/database.cpp
+		$(SERVER_DIR)/resp_parser.cpp \
+		$(SERVER_DIR)/redis_command_handler.cpp \
+		$(SERVER_DIR)/redis_store.cpp \
+		$(SERVER_DIR)/connection_manager.cpp 
+        
+        
 
 # Regla principal - compilación directa sin objetos intermedios
 all: $(BUILD_DIR)/$(TARGET)
