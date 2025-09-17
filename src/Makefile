@@ -20,21 +20,21 @@ SRCS = $(SRC_DIR)/main.cpp \
         
         
 
-# Regla principal - compilación directa sin objetos intermedios
+# build all
 all: $(BUILD_DIR)/$(TARGET)
 
 $(BUILD_DIR)/$(TARGET): $(SRCS)
 	$(CXX) $(CXXFLAGS) -o $@ $(SRCS)
 
-# Limpieza - solo elimina el ejecutable, no objetos
+# Delete all
 clean:
 	rm -f $(BUILD_DIR)/$(TARGET)
 
-# Ejecutar
+# run
 run: $(BUILD_DIR)/$(TARGET)
 	./$(BUILD_DIR)/$(TARGET)
 
-# Depuración
+# debug
 debug: CXXFLAGS += -g
 debug: $(BUILD_DIR)/$(TARGET)
 

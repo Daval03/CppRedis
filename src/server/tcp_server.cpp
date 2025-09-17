@@ -60,8 +60,7 @@ void TCPServer::stop() {
     // Close the server socket to break out of accept()
     if (server_fd != -1) {
         shutdown(server_fd, SHUT_RDWR);
-    }
-    
+    }    
     // Stop all connections through ConnectionManager
     connection_manager.stopAllConnections();
     

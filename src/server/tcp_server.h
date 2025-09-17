@@ -1,22 +1,11 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
-#include <vector>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <unordered_map>
+
 #include <iostream>
-#include <string>
-#include <sstream>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <cstring>
-#include <stdexcept>
-#include <algorithm>
-#include <cctype>
 
 #include "resp_parser.h"
 #include "redis_store.h"
