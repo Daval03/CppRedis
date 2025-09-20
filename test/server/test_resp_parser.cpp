@@ -7,7 +7,7 @@ protected:
     void TearDown() override {}
 };
 
-// Tests de parsing
+// Tests parsing
 TEST_F(RESPParserTest, ParseSimpleArray) {
     std::string input = "*2\r\n$3\r\nGET\r\n$3\r\nkey\r\n";
     auto result = RESPParser::parse(input);
@@ -28,7 +28,7 @@ TEST_F(RESPParserTest, ParseInvalidArrayHeader) {
     EXPECT_THROW(RESPParser::parse(input), std::invalid_argument);
 }
 
-// Tests de formato
+// Tests format
 TEST_F(RESPParserTest, FormatBulkString) {
     std::string result = RESPParser::formatBulkString("hello");
     EXPECT_EQ(result, "$5\r\nhello\r\n");
@@ -45,7 +45,7 @@ TEST_F(RESPParserTest, FormatArray) {
     EXPECT_EQ(result, "*3\r\n$3\r\nSET\r\n$3\r\nkey\r\n$5\r\nvalue\r\n");
 }
 
-// Test de round-trip
+// Test round-trip
 TEST_F(RESPParserTest, RoundTripFormatParse) {
     std::vector<std::string> original = {"GET", "mykey", "value"};
     std::string formatted = RESPParser::formatArray(original);

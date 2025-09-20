@@ -1,4 +1,3 @@
-# Makefile con varios tests independientes
 CXX       = g++
 CXXFLAGS  = -std=c++17 -I../src -pthread
 LDFLAGS   = -lgtest -lgtest_main -pthread
