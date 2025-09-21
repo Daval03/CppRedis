@@ -1,135 +1,46 @@
 #include "resp_parser.h"
 //RESP2 protocol
 
-std::vector<std::string> RESPParser::parse(const std::string& input) {
-    std::vector<std::string> result;
-    
-    if (input.empty()) {
-        throw std::invalid_argument("Empty input");
-    }
-    
-    if (input[0] != '*') {
-        // Fallback for plain text commands (telnet compatibility)
-        return parsePlainText(input);
-    }
-
-    size_t pos = 0;
-    
-    // Read first line *<num>
-    size_t line_end = input.find("\r\n", pos);
-    if (line_end == std::string::npos) {
-        throw std::invalid_argument("Invalid RESP format: missing CRLF after array header");
-    }
-    
-    std::string header = input.substr(pos, line_end - pos);
-    if (header.empty() || header[0] != '*') {
-        throw std::invalid_argument("Invalid RESP format: expected array");
-    }
-    
-    // Extract number of arguments
-    int num_args;
-    try {
-        num_args = std::stoi(header.substr(1));
-    } catch (const std::exception& e) {
-        throw std::invalid_argument("Invalid RESP format: invalid array size");
-    }
-    
-    if (num_args < 0) {
-        throw std::invalid_argument("Invalid RESP format: negative array size");
-    }
-    
-    if (num_args > MAX_ARGS) {
-        throw std::invalid_argument("Invalid RESP format: too many arguments");
-    }
-    
-    pos = line_end + 2; // Skip \r\n
-    
-    // Read each argument
-    for (int i = 0; i < num_args; ++i) {
-        if (pos >= input.length()) {
-            throw std::invalid_argument("Invalid RESP format: truncated input");
-        }
-        
-        // Read line $<len>
-        line_end = input.find("\r\n", pos);
-        if (line_end == std::string::npos) {
-            throw std::invalid_argument("Invalid RESP format: missing CRLF after bulk string header");
-        }
-        
-        std::string length_line = input.substr(pos, line_end - pos);
-        if (length_line.empty() || length_line[0] != '$') {
-            throw std::invalid_argument("Invalid RESP format: expected bulk string");
-        }
-        
-        int len;
-        try {
-            len = std::stoi(length_line.substr(1));
-        } catch (const std::exception& e) {
-            throw std::invalid_argument("Invalid RESP format: invalid bulk string length");
-        }
-        
-        pos = line_end + 2; // Skip \r\n
-        
-        if (len < 0) {
-            result.push_back(""); // NULL string represented as empty
-            continue;
-        }
-        
-        if (len > static_cast<int>(MAX_STRING_LENGTH)) {
-            throw std::invalid_argument("Invalid RESP format: string too long");
-        }
-        
-        // Binary-safe reading: read exact number of bytes
-        if (pos + len + 2 > input.length()) {
-            throw std::invalid_argument("Invalid RESP format: truncated bulk string data");
-        }
-        
-        std::string data = input.substr(pos, len);
-        pos += len;
-        
-        // Verify CRLF terminator
-        if (pos + 2 > input.length() || input.substr(pos, 2) != "\r\n") {
-            throw std::invalid_argument("Invalid RESP format: missing CRLF after bulk string data");
-        }
-        
-        pos += 2; // Skip \r\n
-        result.push_back(data);
-    }
-    
-    return result;
-}
-
-bool RESPParser::parseOne(const std::string& input, std::vector<std::string>& result,size_t& consumed){
+bool RESPParser::parse(const std::string& input, std::vector<std::string>& result,size_t& consumed){
     result.clear();
     consumed = 0;
 
     if (input.empty()) return false;
-    if (input[0] != '*') {
-        // podrías soportar texto plano aquí igual que ahora,
-        // pero vamos con RESP estricto.
-        return false;
-    }
+    if (input[0] != '*') return false;   // solo RESP arrays
 
-    size_t pos = 0;
+    size_t pos = 1;                      // después de '*'
     size_t line_end = input.find("\r\n", pos);
-    if (line_end == std::string::npos) return false; // falta datos
+    if (line_end == std::string::npos) return false;
 
-    int num_args = std::stoi(input.substr(1, line_end - 1));
+    int num_args = std::stoi(input.substr(pos, line_end - pos));
     pos = line_end + 2;
 
     for (int i = 0; i < num_args; ++i) {
-        line_end = input.find("\r\n", pos);
-        if (line_end == std::string::npos) return false; // incompleto
-        int len = std::stoi(input.substr(pos + 1, line_end - pos - 1));
-        pos = line_end + 2;
+        if (pos >= input.size()) return false;
 
-        if (pos + len + 2 > input.size()) return false; // incompleto
+        if (input[pos] != '$') throw std::runtime_error("Expected $");
+        size_t len_end = input.find("\r\n", pos + 1);
+        if (len_end == std::string::npos) return false;
+
+        int len = std::stoi(input.substr(pos + 1, len_end - pos - 1));
+        pos = len_end + 2;
+
+        if (len < 0) {
+            result.emplace_back("");
+            continue;
+        }
+
+        if (pos + len + 2 > input.size()) return false;
+
         result.emplace_back(input.substr(pos, len));
         pos += len;
-        if (pos + 2 > input.size() || input.substr(pos, 2) != "\r\n") return false;
+
+        if (pos + 2 > input.size() || input[pos] != '\r' || input[pos + 1] != '\n')
+            return false;
         pos += 2;
     }
-    consumed = pos;
+
+    consumed = pos; 
     return true;
 }
 
