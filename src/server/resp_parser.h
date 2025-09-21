@@ -21,6 +21,9 @@ public:
     static std::string formatError(const std::string& error);
     static std::string formatArray(const std::vector<std::string>& items);
     static std::string formatNull();
+    
 };
+
+std::vector<std::string> parsePlainText(const std::string& input);
 
 #endif

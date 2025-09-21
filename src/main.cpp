@@ -1,6 +1,7 @@
 #include "../src/server/tcp_server.h"
 
 int main() {
+
     try {
         TCPServer server(6379);
         std::cout << "Starting TCP server on port 6379..." << std::endl;

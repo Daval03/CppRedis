@@ -1,5 +1,5 @@
 #include "resp_parser.h"
-
+//RESP2 protocol
 
 std::vector<std::string> RESPParser::parse(const std::string& input) {
     std::vector<std::string> result;
@@ -10,40 +10,26 @@ std::vector<std::string> RESPParser::parse(const std::string& input) {
     
     if (input[0] != '*') {
         // Fallback for plain text commands (telnet compatibility)
-        std::istringstream iss(input);
-        std::string token;
-        while (iss >> token) {
-            // Remove \r\n characters
-            token.erase(std::remove(token.begin(), token.end(), '\r'), token.end());
-            token.erase(std::remove(token.begin(), token.end(), '\n'), token.end());
-            if (!token.empty()) {
-                result.push_back(token);
-            }
-        }
-        return result;
+        return parsePlainText(input);
     }
 
-    std::istringstream ss(input);
-    std::string line;
+    size_t pos = 0;
     
     // Read first line *<num>
-    if (!std::getline(ss, line)) {
-        throw std::invalid_argument("Invalid RESP format: missing array header");
+    size_t line_end = input.find("\r\n", pos);
+    if (line_end == std::string::npos) {
+        throw std::invalid_argument("Invalid RESP format: missing CRLF after array header");
     }
     
-    if (line.empty() || line[0] != '*') {
+    std::string header = input.substr(pos, line_end - pos);
+    if (header.empty() || header[0] != '*') {
         throw std::invalid_argument("Invalid RESP format: expected array");
-    }
-    
-    // Remove \r if present
-    if (!line.empty() && line.back() == '\r') {
-        line.pop_back();
     }
     
     // Extract number of arguments
     int num_args;
     try {
-        num_args = std::stoi(line.substr(1));
+        num_args = std::stoi(header.substr(1));
     } catch (const std::exception& e) {
         throw std::invalid_argument("Invalid RESP format: invalid array size");
     }
@@ -56,28 +42,33 @@ std::vector<std::string> RESPParser::parse(const std::string& input) {
         throw std::invalid_argument("Invalid RESP format: too many arguments");
     }
     
+    pos = line_end + 2; // Skip \r\n
+    
     // Read each argument
     for (int i = 0; i < num_args; ++i) {
+        if (pos >= input.length()) {
+            throw std::invalid_argument("Invalid RESP format: truncated input");
+        }
+        
         // Read line $<len>
-        if (!std::getline(ss, line)) {
-            throw std::invalid_argument("Invalid RESP format: missing bulk string header");
+        line_end = input.find("\r\n", pos);
+        if (line_end == std::string::npos) {
+            throw std::invalid_argument("Invalid RESP format: missing CRLF after bulk string header");
         }
         
-        if (line.empty() || line[0] != '$') {
+        std::string length_line = input.substr(pos, line_end - pos);
+        if (length_line.empty() || length_line[0] != '$') {
             throw std::invalid_argument("Invalid RESP format: expected bulk string");
-        }
-        
-        // Remove \r if present
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
         }
         
         int len;
         try {
-            len = std::stoi(line.substr(1));
+            len = std::stoi(length_line.substr(1));
         } catch (const std::exception& e) {
             throw std::invalid_argument("Invalid RESP format: invalid bulk string length");
         }
+        
+        pos = line_end + 2; // Skip \r\n
         
         if (len < 0) {
             result.push_back(""); // NULL string represented as empty
@@ -88,22 +79,21 @@ std::vector<std::string> RESPParser::parse(const std::string& input) {
             throw std::invalid_argument("Invalid RESP format: string too long");
         }
         
-        // Read the argument content
-        if (!std::getline(ss, line)) {
-            throw std::invalid_argument("Invalid RESP format: missing bulk string content");
+        // Binary-safe reading: read exact number of bytes
+        if (pos + len + 2 > input.length()) {
+            throw std::invalid_argument("Invalid RESP format: truncated bulk string data");
         }
         
-        // Remove \r if present
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
+        std::string data = input.substr(pos, len);
+        pos += len;
+        
+        // Verify CRLF terminator
+        if (pos + 2 > input.length() || input.substr(pos, 2) != "\r\n") {
+            throw std::invalid_argument("Invalid RESP format: missing CRLF after bulk string data");
         }
         
-        // Validate length
-        if (static_cast<int>(line.length()) != len) {
-            std::cerr << "Warning: Expected length " << len << " but got " << line.length() << std::endl;
-        }
-        
-        result.push_back(line);
+        pos += 2; // Skip \r\n
+        result.push_back(data);
     }
     
     return result;
@@ -138,4 +128,20 @@ std::string RESPParser::formatArray(const std::vector<std::string>& items) {
 
 std::string RESPParser::formatNull() {
     return "$-1\r\n";
+}
+
+std::vector<std::string> parsePlainText(const std::string& input) {
+    std::vector<std::string> result;
+    std::istringstream iss(input);
+    std::string token;
+    
+    while (iss >> token) {
+        // Remove \r\n characters
+        token.erase(std::remove(token.begin(), token.end(), '\r'), token.end());
+        token.erase(std::remove(token.begin(), token.end(), '\n'), token.end());
+        if (!token.empty()) {
+            result.push_back(token);
+        }
+    }
+    return result;
 }
