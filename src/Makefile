@@ -10,18 +10,23 @@ BUILD_DIR = build
 SRC_DIR = .
 SERVER_DIR = server
 UTILS_DIR = utils
+RESP_DIR = resp
+REDIS_DIR = redis
 
 # Archivos fuente
 SRCS = $(SRC_DIR)/main.cpp \
         $(SERVER_DIR)/tcp_server.cpp \
-		$(SERVER_DIR)/resp_parser.cpp \
-		$(SERVER_DIR)/redis_command_handler.cpp \
-		$(SERVER_DIR)/redis_store.cpp \
 		$(SERVER_DIR)/connection_manager.cpp \
+		$(RESP_DIR)/resp_parser.cpp \
+		$(RESP_DIR)/resp_value.cpp \
+		$(REDIS_DIR)/redis_command_handler.cpp \
+		$(REDIS_DIR)/redis_store.cpp \
 		$(UTILS_DIR)/logger.cpp 
 
         
-        
+test:
+	g++ -std=c++17 -Wall -Wextra -O2 -pthread $(RESP_DIR)/resp_parser.cpp $(RESP_DIR)/resp_value.cpp -o $(BUILD_DIR)/test
+	./$(BUILD_DIR)/test
 
 # build all
 all: $(BUILD_DIR)/$(TARGET)
@@ -41,4 +46,4 @@ run: $(BUILD_DIR)/$(TARGET)
 debug: CXXFLAGS += -g
 debug: $(BUILD_DIR)/$(TARGET)
 
-.PHONY: all clean run debug
+.PHONY: all clean run debug test

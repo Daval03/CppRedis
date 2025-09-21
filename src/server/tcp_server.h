@@ -7,10 +7,14 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "resp_parser.h"
-#include "redis_store.h"
-#include "redis_command_handler.h"
+//#include "resp_parser.h"
+//#include "redis_store.h"
+//#include "redis_command_handler.h"
 #include "connection_manager.h"
+
+#include "../../src/resp/resp_parser.h"
+#include "../../src/redis/redis_store.h"
+#include "../../src/redis/redis_command_handler.h"
 #include "../../src/utils/logger.h"
 
 class TCPServer {
