@@ -21,6 +21,7 @@ public:
     static std::string formatError(const std::string& error);
     static std::string formatArray(const std::vector<std::string>& items);
     static std::string formatNull();
+    static bool parseOne(const std::string& input,std::vector<std::string>& result, size_t& consumed);
     
 };
 

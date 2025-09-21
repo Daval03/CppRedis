@@ -110,74 +110,101 @@ size_t TCPServer::getActiveConnections() {
 }
 
 void TCPServer::handleClient(int client_socket) {
-    std::vector<char> buffer(BUFFER_SIZE);
-    
-    // Send Redis welcome message
-    std::string welcome = "+OK Redis Mock Server Ready v1.0\r\n";
-    if (send(client_socket, welcome.c_str(), welcome.length(), 0) < 0) {
-        std::cerr << "Failed to send welcome message" << std::endl;
-        close(client_socket);
-        return;
-    }
-    
+    std::string buffer;            // buffer persistente
+    std::vector<char> tmp(BUFFER_SIZE);
+
     while (running) {
-        // Read data from client
-        ssize_t bytes_read = read(client_socket, buffer.data(), buffer.size() - 1);
-        
-        if (bytes_read <= 0) {
-            if (bytes_read == 0) {
-                std::cout << "Redis client disconnected gracefully" << std::endl;
-            } else if (running) {
-                std::cerr << "Read error: " << strerror(errno) << std::endl;
-            }
-            break;
-        }
+        ssize_t n = read(client_socket, tmp.data(), tmp.size());
+        if (n <= 0) break;
 
-        buffer[bytes_read] = '\0';
-        std::string received_data(buffer.data(), bytes_read);
-        
-        std::cout << "Received Redis command (" << bytes_read << " bytes): " 
-                  << received_data.substr(0, std::min(size_t(50), received_data.length())) 
-                  << (received_data.length() > 50 ? "..." : "") << std::endl;
-        
-        try {
-            // Process the Redis command
-            std::vector<std::string> args = RESPParser::parse(received_data);
-            
-            if (args.empty()) {
-                std::string error = "-ERR Protocol error: empty command\r\n";
-                send(client_socket, error.c_str(), error.length(), 0);
-                continue;
-            }
-            
-            std::string response = command_handler.processCommand(args);
-            
-            if (!response.empty()) {
-                if (send(client_socket, response.c_str(), response.length(), 0) < 0) {
-                    std::cerr << "Send failed: " << strerror(errno) << std::endl;
-                    break;
-                }
-                
-                std::cout << "Sent response (" << response.length() << " bytes): " 
-                          << response.substr(0, std::min(size_t(50), response.length()))
-                          << (response.length() > 50 ? "..." : "") << std::endl;
-                
-                // Check for QUIT command to close connection
-                if (!args.empty()) {
-                    std::string cmd = args[0];
-                    std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
-                    if (cmd == "QUIT") {
-                        break;
-                    }
-                }
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Error processing command: " << e.what() << std::endl;
-            std::string error = "-ERR " + std::string(e.what()) + "\r\n";
-            send(client_socket, error.c_str(), error.length(), 0);
+        buffer.append(tmp.data(), n);
+
+        while (true) {
+            std::vector<std::string> args;
+            size_t consumed = 0;
+            if (!RESPParser::parseOne(buffer, args, consumed))
+                break; // no hay mensaje completo todavía
+
+            buffer.erase(0, consumed);
+
+            std::string resp = command_handler.processCommand(args);
+            if (!resp.empty())
+                send(client_socket, resp.c_str(), resp.size(), 0);
         }
     }
-
     close(client_socket);
-    std::cout << "Client connection closed. Active connections: " << connection_manager.getActiveConnections() << std::endl;
 }
+
+
+// void TCPServer::handleClient(int client_socket) {
+//     std::vector<char> buffer(BUFFER_SIZE);
+    
+//     // Send Redis welcome message
+//     std::string welcome = "+OK Redis Mock Server Ready v1.0\r\n";
+//     if (send(client_socket, welcome.c_str(), welcome.length(), 0) < 0) {
+//         std::cerr << "Failed to send welcome message" << std::endl;
+//         close(client_socket);
+//         return;
+//     }
+    
+//     while (running) {
+//         // Read data from client
+//         ssize_t bytes_read = read(client_socket, buffer.data(), buffer.size() - 1);
+        
+//         if (bytes_read <= 0) {
+//             if (bytes_read == 0) {
+//                 std::cout << "Redis client disconnected gracefully" << std::endl;
+//             } else if (running) {
+//                 std::cerr << "Read error: " << strerror(errno) << std::endl;
+//             }
+//             break;
+//         }
+
+//         buffer[bytes_read] = '\0';
+//         std::string received_data(buffer.data(), bytes_read);
+        
+//         std::cout << "Received Redis command (" << bytes_read << " bytes): " 
+//                   << received_data.substr(0, std::min(size_t(50), received_data.length())) 
+//                   << (received_data.length() > 50 ? "..." : "") << std::endl;
+        
+//         try {
+//             // Process the Redis command
+//             std::vector<std::string> args = RESPParser::parse(received_data);
+            
+//             if (args.empty()) {
+//                 std::string error = "-ERR Protocol error: empty command\r\n";
+//                 send(client_socket, error.c_str(), error.length(), 0);
+//                 continue;
+//             }
+            
+//             std::string response = command_handler.processCommand(args);
+            
+//             if (!response.empty()) {
+//                 if (send(client_socket, response.c_str(), response.length(), 0) < 0) {
+//                     std::cerr << "Send failed: " << strerror(errno) << std::endl;
+//                     break;
+//                 }
+                
+//                 std::cout << "Sent response (" << response.length() << " bytes): " 
+//                           << response.substr(0, std::min(size_t(50), response.length()))
+//                           << (response.length() > 50 ? "..." : "") << std::endl;
+                
+//                 // Check for QUIT command to close connection
+//                 if (!args.empty()) {
+//                     std::string cmd = args[0];
+//                     std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
+//                     if (cmd == "QUIT") {
+//                         break;
+//                     }
+//                 }
+//             }
+//         } catch (const std::exception& e) {
+//             std::cerr << "Error processing command: " << e.what() << std::endl;
+//             std::string error = "-ERR " + std::string(e.what()) + "\r\n";
+//             send(client_socket, error.c_str(), error.length(), 0);
+//         }
+//     }
+
+//     close(client_socket);
+//     std::cout << "Client connection closed. Active connections: " << connection_manager.getActiveConnections() << std::endl;
+// }

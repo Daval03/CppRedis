@@ -99,6 +99,41 @@ std::vector<std::string> RESPParser::parse(const std::string& input) {
     return result;
 }
 
+bool RESPParser::parseOne(const std::string& input, std::vector<std::string>& result,size_t& consumed){
+    result.clear();
+    consumed = 0;
+
+    if (input.empty()) return false;
+    if (input[0] != '*') {
+        // podrías soportar texto plano aquí igual que ahora,
+        // pero vamos con RESP estricto.
+        return false;
+    }
+
+    size_t pos = 0;
+    size_t line_end = input.find("\r\n", pos);
+    if (line_end == std::string::npos) return false; // falta datos
+
+    int num_args = std::stoi(input.substr(1, line_end - 1));
+    pos = line_end + 2;
+
+    for (int i = 0; i < num_args; ++i) {
+        line_end = input.find("\r\n", pos);
+        if (line_end == std::string::npos) return false; // incompleto
+        int len = std::stoi(input.substr(pos + 1, line_end - pos - 1));
+        pos = line_end + 2;
+
+        if (pos + len + 2 > input.size()) return false; // incompleto
+        result.emplace_back(input.substr(pos, len));
+        pos += len;
+        if (pos + 2 > input.size() || input.substr(pos, 2) != "\r\n") return false;
+        pos += 2;
+    }
+    consumed = pos;
+    return true;
+}
+
+
 std::string RESPParser::formatBulkString(const std::string& str) {
     if (str.empty()) {
         return "$-1\r\n"; // NULL bulk string
@@ -145,3 +180,4 @@ std::vector<std::string> parsePlainText(const std::string& input) {
     }
     return result;
 }
+
