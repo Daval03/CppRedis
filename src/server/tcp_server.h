@@ -11,6 +11,7 @@
 #include "redis_store.h"
 #include "redis_command_handler.h"
 #include "connection_manager.h"
+#include "../../src/utils/logger.h"
 
 class TCPServer {
 private:

@@ -125,6 +125,8 @@ void TCPServer::handleClient(int client_socket) {
             if (!RESPParser::parse(buffer, args, consumed))
                 break; // msg not complete
 
+            logCommand(args, consumed);
+            
             buffer.erase(0, consumed);
 
             std::string resp = command_handler.processCommand(args);

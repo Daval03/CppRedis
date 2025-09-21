@@ -9,6 +9,7 @@ TARGET = cppredis
 BUILD_DIR = build
 SRC_DIR = .
 SERVER_DIR = server
+UTILS_DIR = utils
 
 # Archivos fuente
 SRCS = $(SRC_DIR)/main.cpp \
@@ -16,7 +17,9 @@ SRCS = $(SRC_DIR)/main.cpp \
 		$(SERVER_DIR)/resp_parser.cpp \
 		$(SERVER_DIR)/redis_command_handler.cpp \
 		$(SERVER_DIR)/redis_store.cpp \
-		$(SERVER_DIR)/connection_manager.cpp 
+		$(SERVER_DIR)/connection_manager.cpp \
+		$(UTILS_DIR)/logger.cpp 
+
         
         
 
