@@ -9,9 +9,9 @@
 
 
 #include "connection_manager.h"
-#include "../../src/resp/resp_parser.h"
-#include "../../src/redis/command_handler.h"
-#include "../../src/utils/logger.h"
+#include "resp/resp_parser.h"
+#include "redis/command_handler.h"
+#include "utils/logger.h"
 
 class TCPServer {
 private:

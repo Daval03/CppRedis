@@ -10,7 +10,7 @@
 #include <limits>
 #include <variant>
 #include <optional>
-#include "../../src/enum/resp_type.h"
+#include "enum/resp_type.h"
 #include "resp_value.h"
 
 

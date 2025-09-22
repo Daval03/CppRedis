@@ -5,7 +5,7 @@
 #include <string>
 #include <variant>
 #include <optional>
-#include "../../src/enum/resp_type.h"
+#include "enum/resp_type.h"
 
 // RESP2 Value representation
 struct RESPValue {

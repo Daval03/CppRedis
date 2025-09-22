@@ -72,7 +72,8 @@ SRCS = main.cpp \
        resp/resp_value.cpp \
        redis/command_handler.cpp \
        redis/database/redis_database.cpp \
-       redis/commands/string_commands.cpp
+       redis/commands/string_commands.cpp \
+	   redis/commands/list_commands.cpp
 
 # build all
 all: $(BUILD_DIR)/$(TARGET)

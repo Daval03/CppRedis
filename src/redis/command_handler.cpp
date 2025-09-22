@@ -1,11 +1,10 @@
 #include "command_handler.h"
 
-// CommandHandler::CommandHandler() : start_time(std::chrono::system_clock::now()) {
-//     initializeCommands();
-// }
 CommandHandler::CommandHandler() 
     : start_time(std::chrono::system_clock::now()),
-      string_commands(std::make_unique<StringCommands>(db)) {
+      string_commands(std::make_unique<StringCommands>(db)),
+      list_commands(std::make_unique<ListCommands>(db)),
+      set_commands(std::make_unique<SetCommands>(db)) {
     initializeCommands();
 }
 
@@ -26,22 +25,22 @@ void CommandHandler::initializeCommands() {
     commands["MSET"] = [this](const std::vector<std::string>& args) { return string_commands->cmdMset(args); };
     
     // List commands
-    commands["LPUSH"] = [this](const std::vector<std::string>& args) { return cmdLpush(args); };
-    commands["RPUSH"] = [this](const std::vector<std::string>& args) { return cmdRpush(args); };
-    commands["LPOP"] = [this](const std::vector<std::string>& args) { return cmdLpop(args); };
-    commands["RPOP"] = [this](const std::vector<std::string>& args) { return cmdRpop(args); };
-    commands["LLEN"] = [this](const std::vector<std::string>& args) { return cmdLlen(args); };
-    commands["LRANGE"] = [this](const std::vector<std::string>& args) { return cmdLrange(args); };
-    commands["LINDEX"] = [this](const std::vector<std::string>& args) { return cmdLindex(args); };
-    commands["LSET"] = [this](const std::vector<std::string>& args) { return cmdLset(args); };
+    commands["LPUSH"] = [this](const std::vector<std::string>& args) { return list_commands->cmdLpush(args); };
+    commands["RPUSH"] = [this](const std::vector<std::string>& args) { return list_commands->cmdRpush(args); };
+    commands["LPOP"] = [this](const std::vector<std::string>& args) { return list_commands->cmdLpop(args); };
+    commands["RPOP"] = [this](const std::vector<std::string>& args) { return list_commands->cmdRpop(args); };
+    commands["LLEN"] = [this](const std::vector<std::string>& args) { return list_commands->cmdLlen(args); };
+    commands["LRANGE"] = [this](const std::vector<std::string>& args) { return list_commands->cmdLrange(args); };
+    commands["LINDEX"] = [this](const std::vector<std::string>& args) { return list_commands->cmdLindex(args); };
+    commands["LSET"] = [this](const std::vector<std::string>& args) { return list_commands->cmdLset(args); };
     
     // Set commands
-    commands["SADD"] = [this](const std::vector<std::string>& args) { return cmdSadd(args); };
-    commands["SREM"] = [this](const std::vector<std::string>& args) { return cmdSrem(args); };
-    commands["SISMEMBER"] = [this](const std::vector<std::string>& args) { return cmdSismember(args); };
-    commands["SCARD"] = [this](const std::vector<std::string>& args) { return cmdScard(args); };
-    commands["SMEMBERS"] = [this](const std::vector<std::string>& args) { return cmdSmembers(args); };
-    commands["SPOP"] = [this](const std::vector<std::string>& args) { return cmdSpop(args); };
+    commands["SADD"] = [this](const std::vector<std::string>& args) { return set_commands->cmdSadd(args); };
+    commands["SREM"] = [this](const std::vector<std::string>& args) { return set_commands->cmdSrem(args); };
+    commands["SISMEMBER"] = [this](const std::vector<std::string>& args) { return set_commands->cmdSismember(args); };
+    commands["SCARD"] = [this](const std::vector<std::string>& args) { return set_commands->cmdScard(args); };
+    commands["SMEMBERS"] = [this](const std::vector<std::string>& args) { return set_commands->cmdSmembers(args); };
+    commands["SPOP"] = [this](const std::vector<std::string>& args) { return set_commands->cmdSpop(args); };
     
     // Hash commands
     commands["HSET"] = [this](const std::vector<std::string>& args) { return cmdHset(args); };
@@ -93,351 +92,6 @@ std::string CommandHandler::processCommand(const std::vector<std::string>& args)
     } catch (const std::exception& e) {
         return RESPFormatter::formatError("ERR " + std::string(e.what()));
     }
-}
-
-
-// List Commands Implementation
-std::string CommandHandler::cmdLpush(const std::vector<std::string>& args) {
-    if (args.size() < 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'lpush' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (value && value->type != RedisValue::Type::LIST) {
-        return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
-    }
-    
-    if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::LIST));
-        value = db.getValue(key);
-    }
-    
-    for (size_t i = args.size() - 1; i >= 2; i--) {
-        value->list_value.push_front(args[i]);
-    }
-    
-    return RESPFormatter::formatInteger(value->list_value.size());
-}
-
-std::string CommandHandler::cmdRpush(const std::vector<std::string>& args) {
-    if (args.size() < 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'rpush' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (value && value->type != RedisValue::Type::LIST) {
-        return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
-    }
-    
-    if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::LIST));
-        value = db.getValue(key);
-    }
-    
-    for (size_t i = 2; i < args.size(); i++) {
-        value->list_value.push_back(args[i]);
-    }
-    
-    return RESPFormatter::formatInteger(value->list_value.size());
-}
-
-std::string CommandHandler::cmdLpop(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'lpop' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::LIST || value->list_value.empty()) {
-        return RESPFormatter::formatNull();
-    }
-    
-    std::string result = value->list_value.front();
-    value->list_value.pop_front();
-    
-    if (value->list_value.empty()) {
-        db.deleteKey(key);
-    }
-    
-    return RESPFormatter::formatBulkString(result);
-}
-
-std::string CommandHandler::cmdRpop(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'rpop' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::LIST || value->list_value.empty()) {
-        return RESPFormatter::formatNull();
-    }
-    
-    std::string result = value->list_value.back();
-    value->list_value.pop_back();
-    
-    if (value->list_value.empty()) {
-        db.deleteKey(key);
-    }
-    
-    return RESPFormatter::formatBulkString(result);
-}
-
-std::string CommandHandler::cmdLlen(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'llen' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::LIST) {
-        return RESPFormatter::formatInteger(0);
-    }
-    
-    return RESPFormatter::formatInteger(value->list_value.size());
-}
-
-std::string CommandHandler::cmdLrange(const std::vector<std::string>& args) {
-    if (args.size() != 4) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'lrange' command");
-    }
-    
-    const std::string& key = args[1];
-    if (!UtilityFunctions::isInteger(args[2]) || !UtilityFunctions::isInteger(args[3])) {
-        return RESPFormatter::formatError("ERR value is not an integer or out of range");
-    }
-    
-    RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::LIST) {
-        return RESPFormatter::formatArray(std::vector<std::string>());
-    }
-    
-    long long start = UtilityFunctions::parseInt(args[2]);
-    long long end = UtilityFunctions::parseInt(args[3]);
-    
-    const auto& list = value->list_value;
-    long long list_size = static_cast<long long>(list.size());
-    
-    // Handle negative indices
-    if (start < 0) start += list_size;
-    if (end < 0) end += list_size;
-    
-    // Clamp to valid range
-    start = std::max(0LL, std::min(start, list_size - 1));
-    end = std::max(0LL, std::min(end, list_size - 1));
-    
-    std::vector<std::string> result;
-    if (start <= end) {
-        auto it = list.begin();
-        std::advance(it, start);
-        
-        for (long long i = start; i <= end && it != list.end(); i++, ++it) {
-            result.push_back(*it);
-        }
-    }
-    
-    return RESPFormatter::formatArray(result);
-}
-
-std::string CommandHandler::cmdLindex(const std::vector<std::string>& args) {
-    if (args.size() != 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'lindex' command");
-    }
-    
-    const std::string& key = args[1];
-    if (!UtilityFunctions::isInteger(args[2])) {
-        return RESPFormatter::formatError("ERR value is not an integer or out of range");
-    }
-    
-    RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::LIST) {
-        return RESPFormatter::formatNull();
-    }
-    
-    long long index = UtilityFunctions::parseInt(args[2]);
-    const auto& list = value->list_value;
-    long long list_size = static_cast<long long>(list.size());
-    
-    // Handle negative index
-    if (index < 0) index += list_size;
-    
-    if (index < 0 || index >= list_size) {
-        return RESPFormatter::formatNull();
-    }
-    
-    auto it = list.begin();
-    std::advance(it, index);
-    return RESPFormatter::formatBulkString(*it);
-}
-
-std::string CommandHandler::cmdLset(const std::vector<std::string>& args) {
-    if (args.size() != 4) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'lset' command");
-    }
-    
-    const std::string& key = args[1];
-    if (!UtilityFunctions::isInteger(args[2])) {
-        return RESPFormatter::formatError("ERR value is not an integer or out of range");
-    }
-    
-    RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::LIST) {
-        return RESPFormatter::formatError("ERR no such key");
-    }
-    
-    long long index = UtilityFunctions::parseInt(args[2]);
-    auto& list = value->list_value;
-    long long list_size = static_cast<long long>(list.size());
-    
-    // Handle negative index
-    if (index < 0) index += list_size;
-    
-    if (index < 0 || index >= list_size) {
-        return RESPFormatter::formatError("ERR index out of range");
-    }
-    
-    auto it = list.begin();
-    std::advance(it, index);
-    *it = args[3];
-    
-    return RESPFormatter::formatSimpleString("OK");
-}
-
-// Set Commands Implementation
-std::string CommandHandler::cmdSadd(const std::vector<std::string>& args) {
-    if (args.size() < 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'sadd' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (value && value->type != RedisValue::Type::SET) {
-        return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
-    }
-    
-    if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::SET));
-        value = db.getValue(key);
-    }
-    
-    int added = 0;
-    for (size_t i = 2; i < args.size(); i++) {
-        if (value->set_value.insert(args[i]).second) {
-            added++;
-        }
-    }
-    
-    return RESPFormatter::formatInteger(added);
-}
-
-std::string CommandHandler::cmdSrem(const std::vector<std::string>& args) {
-    if (args.size() < 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'srem' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::SET) {
-        return RESPFormatter::formatInteger(0);
-    }
-    
-    int removed = 0;
-    for (size_t i = 2; i < args.size(); i++) {
-        if (value->set_value.erase(args[i]) > 0) {
-            removed++;
-        }
-    }
-    
-    if (value->set_value.empty()) {
-        db.deleteKey(key);
-    }
-    
-    return RESPFormatter::formatInteger(removed);
-}
-
-std::string CommandHandler::cmdSismember(const std::vector<std::string>& args) {
-    if (args.size() != 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'sismember' command");
-    }
-    
-    const std::string& key = args[1];
-    const std::string& member = args[2];
-    
-    RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::SET) {
-        return RESPFormatter::formatInteger(0);
-    }
-    
-    return RESPFormatter::formatInteger(value->set_value.count(member) > 0 ? 1 : 0);
-}
-
-std::string CommandHandler::cmdScard(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'scard' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::SET) {
-        return RESPFormatter::formatInteger(0);
-    }
-    
-    return RESPFormatter::formatInteger(value->set_value.size());
-}
-
-std::string CommandHandler::cmdSmembers(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'smembers' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::SET) {
-        return RESPFormatter::formatArray(std::vector<std::string>());
-    }
-    
-    std::vector<std::string> members(value->set_value.begin(), value->set_value.end());
-    return RESPFormatter::formatArray(members);
-}
-
-std::string CommandHandler::cmdSpop(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'spop' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::SET || value->set_value.empty()) {
-        return RESPFormatter::formatNull();
-    }
-    
-    // Get random element
-    auto it = value->set_value.begin();
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, value->set_value.size() - 1);
-    std::advance(it, dis(gen));
-    
-    std::string result = *it;
-    value->set_value.erase(it);
-    
-    if (value->set_value.empty()) {
-        db.deleteKey(key);
-    }
-    
-    return RESPFormatter::formatBulkString(result);
 }
 
 // Hash Commands Implementation

@@ -17,14 +17,14 @@
 #include <iomanip>
 
 #include "resp/resp_value.h"
-
 #include "resp/resp_parser.h"
-
 #include "resp/resp_formatter.h"
-
 #include "utils/utility_functions.h"
 #include "redis/database/redis_database.h"
 #include "redis/commands/string_commands.h"
+#include "redis/commands/list_commands.h"
+#include "redis/commands/set_commands.h"
+
 
 // Command handler class
 class CommandHandler {
@@ -46,25 +46,9 @@ private:
     
     // Command handlers
     std::unique_ptr<StringCommands> string_commands;
-
-    // List commands
-    std::string cmdLpush(const std::vector<std::string>& args);
-    std::string cmdRpush(const std::vector<std::string>& args);
-    std::string cmdLpop(const std::vector<std::string>& args);
-    std::string cmdRpop(const std::vector<std::string>& args);
-    std::string cmdLlen(const std::vector<std::string>& args);
-    std::string cmdLrange(const std::vector<std::string>& args);
-    std::string cmdLindex(const std::vector<std::string>& args);
-    std::string cmdLset(const std::vector<std::string>& args);
-    
-    // Set commands
-    std::string cmdSadd(const std::vector<std::string>& args);
-    std::string cmdSrem(const std::vector<std::string>& args);
-    std::string cmdSismember(const std::vector<std::string>& args);
-    std::string cmdScard(const std::vector<std::string>& args);
-    std::string cmdSmembers(const std::vector<std::string>& args);
-    std::string cmdSpop(const std::vector<std::string>& args);
-    
+    std::unique_ptr<ListCommands> list_commands;
+    std::unique_ptr<SetCommands> set_commands;
+        
     // Hash commands
     std::string cmdHset(const std::vector<std::string>& args);
     std::string cmdHget(const std::vector<std::string>& args);
