@@ -17,8 +17,10 @@
 #include <ctime>
 #include <iomanip>
 #include "../../src/resp/resp_parser.h"
+#include "../../src/resp/resp_formatter.h"
 #include "../../src/redis/database/redis_value.h"
 #include "../../src/redis/database/redis_database.h"
+
 
 // Command handler class
 class CommandHandler {
@@ -37,13 +39,14 @@ private:
     
     // Helper methods
     void initializeCommands();
-    std::string formatResponse(const RESPValue& value);
-    std::string formatError(const std::string& message);
-    std::string formatSimpleString(const std::string& str);
-    std::string formatBulkString(const std::string& str);
-    std::string formatInteger(long long value);
-    std::string formatArray(const std::vector<std::string>& items);
-    std::string formatNull();
+    //std::string formatResponse(const RESPValue& value);
+    
+    // std::string formatError(const std::string& message);
+    // std::string formatSimpleString(const std::string& str);
+    // std::string formatBulkString(const std::string& str);
+    // std::string formatInteger(long long value);
+    // std::string formatArray(const std::vector<std::string>& items);
+    // std::string formatNull();
     
     bool isValidKey(const std::string& key);
     

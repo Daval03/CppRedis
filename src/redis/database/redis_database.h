@@ -19,10 +19,7 @@ public:
     size_t getDatabaseSize() const;
     void cleanupExpiredKeys();
     
-    std::mutex& getMutex() const { return db_mutex; }
     // Iterator support for KEYS command
     std::vector<std::string> getMatchingKeys(const std::string& pattern) const;
     
-    // Thread safety
-    std::lock_guard<std::mutex> getLock() const { return std::lock_guard<std::mutex>(db_mutex); }
 };
