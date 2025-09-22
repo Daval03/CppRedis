@@ -24,6 +24,7 @@
 #include "redis/commands/string_commands.h"
 #include "redis/commands/list_commands.h"
 #include "redis/commands/set_commands.h"
+#include "redis/commands/hash_commands.h"
 
 
 // Command handler class
@@ -48,16 +49,7 @@ private:
     std::unique_ptr<StringCommands> string_commands;
     std::unique_ptr<ListCommands> list_commands;
     std::unique_ptr<SetCommands> set_commands;
-        
-    // Hash commands
-    std::string cmdHset(const std::vector<std::string>& args);
-    std::string cmdHget(const std::vector<std::string>& args);
-    std::string cmdHdel(const std::vector<std::string>& args);
-    std::string cmdHexists(const std::vector<std::string>& args);
-    std::string cmdHlen(const std::vector<std::string>& args);
-    std::string cmdHkeys(const std::vector<std::string>& args);
-    std::string cmdHvals(const std::vector<std::string>& args);
-    std::string cmdHgetall(const std::vector<std::string>& args);
+    std::unique_ptr<HashCommands> hash_commands;
     
     // TTL commands
     std::string cmdExpire(const std::vector<std::string>& args);

@@ -73,6 +73,8 @@ SRCS = main.cpp \
        redis/command_handler.cpp \
        redis/database/redis_database.cpp \
        redis/commands/string_commands.cpp \
+	   redis/commands/hash_commands.cpp \
+	   redis/commands/set_commands.cpp \
 	   redis/commands/list_commands.cpp
 
 # build all

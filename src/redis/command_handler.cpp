@@ -4,7 +4,8 @@ CommandHandler::CommandHandler()
     : start_time(std::chrono::system_clock::now()),
       string_commands(std::make_unique<StringCommands>(db)),
       list_commands(std::make_unique<ListCommands>(db)),
-      set_commands(std::make_unique<SetCommands>(db)) {
+      set_commands(std::make_unique<SetCommands>(db)),
+      hash_commands(std::make_unique<HashCommands>(db)) {
     initializeCommands();
 }
 
@@ -43,14 +44,14 @@ void CommandHandler::initializeCommands() {
     commands["SPOP"] = [this](const std::vector<std::string>& args) { return set_commands->cmdSpop(args); };
     
     // Hash commands
-    commands["HSET"] = [this](const std::vector<std::string>& args) { return cmdHset(args); };
-    commands["HGET"] = [this](const std::vector<std::string>& args) { return cmdHget(args); };
-    commands["HDEL"] = [this](const std::vector<std::string>& args) { return cmdHdel(args); };
-    commands["HEXISTS"] = [this](const std::vector<std::string>& args) { return cmdHexists(args); };
-    commands["HLEN"] = [this](const std::vector<std::string>& args) { return cmdHlen(args); };
-    commands["HKEYS"] = [this](const std::vector<std::string>& args) { return cmdHkeys(args); };
-    commands["HVALS"] = [this](const std::vector<std::string>& args) { return cmdHvals(args); };
-    commands["HGETALL"] = [this](const std::vector<std::string>& args) { return cmdHgetall(args); };
+    commands["HSET"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHset(args); };
+    commands["HGET"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHget(args); };
+    commands["HDEL"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHdel(args); };
+    commands["HEXISTS"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHexists(args); };
+    commands["HLEN"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHlen(args); };
+    commands["HKEYS"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHkeys(args); };
+    commands["HVALS"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHvals(args); };
+    commands["HGETALL"] = [this](const std::vector<std::string>& args) { return hash_commands->cmdHgetall(args); };
     
     // TTL commands
     commands["EXPIRE"] = [this](const std::vector<std::string>& args) { return cmdExpire(args); };
@@ -92,177 +93,6 @@ std::string CommandHandler::processCommand(const std::vector<std::string>& args)
     } catch (const std::exception& e) {
         return RESPFormatter::formatError("ERR " + std::string(e.what()));
     }
-}
-
-// Hash Commands Implementation
-std::string CommandHandler::cmdHset(const std::vector<std::string>& args) {
-    if (args.size() < 4 || args.size() % 2 != 0) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hset' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (value && value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
-    }
-    
-    if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::HASH));
-        value = db.getValue(key);
-    }
-    
-    int added = 0;
-    for (size_t i = 2; i < args.size(); i += 2) {
-        const std::string& field = args[i];
-        const std::string& field_value = args[i + 1];
-        
-        if (value->hash_value.find(field) == value->hash_value.end()) {
-            added++;
-        }
-        value->hash_value[field] = field_value;
-    }
-    
-    return RESPFormatter::formatInteger(added);
-}
-
-std::string CommandHandler::cmdHget(const std::vector<std::string>& args) {
-    if (args.size() != 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hget' command");
-    }
-    
-    const std::string& key = args[1];
-    const std::string& field = args[2];
-    
-    RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatNull();
-    }
-    
-    auto it = value->hash_value.find(field);
-    if (it == value->hash_value.end()) {
-        return RESPFormatter::formatNull();
-    }
-    
-    return RESPFormatter::formatBulkString(it->second);
-}
-
-std::string CommandHandler::cmdHdel(const std::vector<std::string>& args) {
-    if (args.size() < 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hdel' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatInteger(0);
-    }
-    
-    int deleted = 0;
-    for (size_t i = 2; i < args.size(); i++) {
-        if (value->hash_value.erase(args[i]) > 0) {
-            deleted++;
-        }
-    }
-    
-    if (value->hash_value.empty()) {
-        db.deleteKey(key);
-    }
-    
-    return RESPFormatter::formatInteger(deleted);
-}
-
-std::string CommandHandler::cmdHexists(const std::vector<std::string>& args) {
-    if (args.size() != 3) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hexists' command");
-    }
-    
-    const std::string& key = args[1];
-    const std::string& field = args[2];
-    
-    RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatInteger(0);
-    }
-    
-    return RESPFormatter::formatInteger(value->hash_value.count(field) > 0 ? 1 : 0);
-}
-
-std::string CommandHandler::cmdHlen(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hlen' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatInteger(0);
-    }
-    
-    return RESPFormatter::formatInteger(value->hash_value.size());
-}
-
-std::string CommandHandler::cmdHkeys(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hkeys' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatArray(std::vector<std::string>());
-    }
-    
-    std::vector<std::string> keys;
-    for (const auto& pair : value->hash_value) {
-        keys.push_back(pair.first);
-    }
-    
-    return RESPFormatter::formatArray(keys);
-}
-
-std::string CommandHandler::cmdHvals(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hvals' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatArray(std::vector<std::string>());
-    }
-    
-    std::vector<std::string> values;
-    for (const auto& pair : value->hash_value) {
-        values.push_back(pair.second);
-    }
-    
-    return RESPFormatter::formatArray(values);
-}
-
-std::string CommandHandler::cmdHgetall(const std::vector<std::string>& args) {
-    if (args.size() != 2) {
-        return RESPFormatter::formatError("ERR wrong number of arguments for 'hgetall' command");
-    }
-    
-    const std::string& key = args[1];
-    RedisValue* value = db.getValue(key);
-    
-    if (!value || value->type != RedisValue::Type::HASH) {
-        return RESPFormatter::formatArray(std::vector<std::string>());
-    }
-    
-    std::vector<std::string> result;
-    for (const auto& pair : value->hash_value) {
-        result.push_back(pair.first);
-        result.push_back(pair.second);
-    }
-    
-    return RESPFormatter::formatArray(result);
 }
 
 // TTL Commands Implementation
