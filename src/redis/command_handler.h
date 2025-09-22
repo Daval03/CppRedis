@@ -25,7 +25,8 @@
 #include "redis/commands/list_commands.h"
 #include "redis/commands/set_commands.h"
 #include "redis/commands/hash_commands.h"
-
+#include "redis/commands/ttl_commands.h"
+#include "redis/commands/server_commands.h"
 
 // Command handler class
 class CommandHandler {
@@ -50,22 +51,9 @@ private:
     std::unique_ptr<ListCommands> list_commands;
     std::unique_ptr<SetCommands> set_commands;
     std::unique_ptr<HashCommands> hash_commands;
-    
-    // TTL commands
-    std::string cmdExpire(const std::vector<std::string>& args);
-    std::string cmdExpireat(const std::vector<std::string>& args);
-    std::string cmdTtl(const std::vector<std::string>& args);
-    std::string cmdPersist(const std::vector<std::string>& args);
-    
-    // Server commands
-    std::string cmdPing(const std::vector<std::string>& args);
-    std::string cmdEcho(const std::vector<std::string>& args);
-    std::string cmdInfo(const std::vector<std::string>& args);
-    std::string cmdFlushall(const std::vector<std::string>& args);
-    std::string cmdKeys(const std::vector<std::string>& args);
-    std::string cmdDbsize(const std::vector<std::string>& args);
-    std::string cmdTime(const std::vector<std::string>& args);
-    
+    std::unique_ptr<TTLCommands> ttl_commands;
+    std::unique_ptr<ServerCommands> server_commands;
+ 
 public:
     CommandHandler();
     ~CommandHandler() = default;
