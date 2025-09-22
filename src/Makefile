@@ -12,7 +12,7 @@ SERVER_DIR = server
 UTILS_DIR = utils
 RESP_DIR = resp
 REDIS_DIR = redis
-
+REDIS_DATABASE_DIR = redis/database
 # Archivos fuente
 SRCS = $(SRC_DIR)/main.cpp \
         $(SERVER_DIR)/tcp_server.cpp \
@@ -20,6 +20,7 @@ SRCS = $(SRC_DIR)/main.cpp \
 		$(RESP_DIR)/resp_parser.cpp \
 		$(RESP_DIR)/resp_value.cpp \
 		$(REDIS_DIR)/command_handler.cpp \
+		$(REDIS_DATABASE_DIR)/redis_database.cpp \
 		$(UTILS_DIR)/logger.cpp 
 
         

@@ -138,8 +138,7 @@ void TCPServer::handleClient(int client_socket) {
             
             buffer.erase(0, consumed);
 
-            //std::string resp = command_handler.processCommand(resp_value);
-            std::string resp = command_handler2.processCommand(resp_value);
+            std::string resp = command_handler.processCommand(args);
 
             if (!resp.empty())
                 send(client_socket, resp.c_str(), resp.size(), 0);

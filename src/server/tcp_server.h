@@ -24,7 +24,7 @@ private:
     
     // Redis-like storage
     ConnectionManager connection_manager; 
-    CommandHandler command_handler2;
+    CommandHandler command_handler;
     void acceptConnections();
     void handleClient(int client_socket);
     

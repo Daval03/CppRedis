@@ -17,56 +17,15 @@
 #include <ctime>
 #include <iomanip>
 #include "../../src/resp/resp_parser.h"
-
-// Forward declarations
-class RESPValue;
-enum class RESPType;
-
-// Data structures for different Redis data types
-struct RedisValue {
-    enum class Type {
-        STRING,
-        LIST,
-        SET,
-        HASH,
-        ZSET,
-        STREAM
-    };
-    
-    Type type;
-    std::string string_value;
-    std::list<std::string> list_value;
-    std::set<std::string> set_value;
-    std::unordered_map<std::string, std::string> hash_value;
-    std::map<double, std::set<std::string>> zset_value;
-    
-    // TTL support
-    std::chrono::system_clock::time_point expiry;
-    bool has_expiry = false;
-    
-    RedisValue() : type(Type::STRING) {}
-    explicit RedisValue(Type t) : type(t) {}
-    explicit RedisValue(const std::string& str) : type(Type::STRING), string_value(str) {}
-    
-    bool isExpired() const {
-        return has_expiry && std::chrono::system_clock::now() >= expiry;
-    }
-    
-    void setExpiry(std::chrono::milliseconds ttl) {
-        expiry = std::chrono::system_clock::now() + ttl;
-        has_expiry = true;
-    }
-    
-    void clearExpiry() {
-        has_expiry = false;
-    }
-};
+#include "../../src/redis/database/redis_value.h"
+#include "../../src/redis/database/redis_database.h"
 
 // Command handler class
 class CommandHandler {
 private:
-    std::unordered_map<std::string, RedisValue> database;
-    mutable std::mutex db_mutex;
+
+    //Database
+    RedisDatabase db;
     
     // Server info
     std::chrono::system_clock::time_point start_time;
@@ -87,11 +46,6 @@ private:
     std::string formatNull();
     
     bool isValidKey(const std::string& key);
-    void cleanupExpiredKeys();
-    bool keyExists(const std::string& key);
-    RedisValue* getValue(const std::string& key);
-    void setValue(const std::string& key, RedisValue value);
-    bool deleteKey(const std::string& key);
     
     // String commands
     std::string cmdSet(const std::vector<std::string>& args);
@@ -162,14 +116,10 @@ public:
     ~CommandHandler() = default;
     
     // Main processing method
-    std::string processCommand(const RESPValue& command);
     std::string processCommand(const std::vector<std::string>& args);
-    
-    // Database management
-    void clearDatabase();
-    size_t getDatabaseSize() const;
     
     // Statistics
     size_t getTotalCommandsProcessed() const { return total_commands_processed; }
     std::chrono::system_clock::time_point getStartTime() const { return start_time; }
 };
+

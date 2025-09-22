@@ -64,23 +64,17 @@ void CommandHandler::initializeCommands() {
     commands["TIME"] = [this](const std::vector<std::string>& args) { return cmdTime(args); };
 }
 
-std::string CommandHandler::processCommand(const RESPValue& command) {
-    RESPParser parser;
-    std::vector<std::string> args = parser.toStringVector(command);
-    return processCommand(args);
-}
-
 std::string CommandHandler::processCommand(const std::vector<std::string>& args) {
     if (args.empty()) {
         return formatError("ERR empty command");
     }
     
-    std::lock_guard<std::mutex> lock(db_mutex);
+    //std::lock_guard<std::mutex> lock(db.getMutex());
     total_commands_processed++;
     
     // Clean up expired keys periodically
     if (total_commands_processed % 100 == 0) {
-        cleanupExpiredKeys();
+        db.cleanupExpiredKeys();
     }
     
     std::string command = toUpper(args[0]);
@@ -126,19 +120,19 @@ std::string CommandHandler::cmdSet(const std::vector<std::string>& args) {
             }
             redis_value.setExpiry(std::chrono::milliseconds(parseInt(args[i + 1])));
         } else if (param == "NX") {
-            if (keyExists(key)) {
+            if (db.keyExists(key)) {
                 return formatNull();
             }
             i--; // NX doesn't have a value
         } else if (param == "XX") {
-            if (!keyExists(key)) {
+            if (!db.keyExists(key)) {
                 return formatNull();
             }
             i--; // XX doesn't have a value
         }
     }
     
-    setValue(key, redis_value);
+    db.setValue(key, redis_value);
     return formatSimpleString("OK");
 }
 
@@ -148,7 +142,7 @@ std::string CommandHandler::cmdGet(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::STRING) {
         return formatNull();
@@ -164,7 +158,7 @@ std::string CommandHandler::cmdDel(const std::vector<std::string>& args) {
     
     int deleted = 0;
     for (size_t i = 1; i < args.size(); i++) {
-        if (deleteKey(args[i])) {
+        if (db.deleteKey(args[i])) {
             deleted++;
         }
     }
@@ -179,7 +173,7 @@ std::string CommandHandler::cmdExists(const std::vector<std::string>& args) {
     
     int count = 0;
     for (size_t i = 1; i < args.size(); i++) {
-        if (keyExists(args[i])) {
+        if (db.keyExists(args[i])) {
             count++;
         }
     }
@@ -193,7 +187,7 @@ std::string CommandHandler::cmdType(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value) {
         return formatSimpleString("none");
@@ -215,7 +209,7 @@ std::string CommandHandler::cmdIncr(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     long long current = 0;
     if (value) {
@@ -229,7 +223,7 @@ std::string CommandHandler::cmdIncr(const std::vector<std::string>& args) {
     }
     
     current++;
-    setValue(key, RedisValue(std::to_string(current)));
+    db.setValue(key, RedisValue(std::to_string(current)));
     return formatInteger(current);
 }
 
@@ -239,7 +233,7 @@ std::string CommandHandler::cmdDecr(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     long long current = 0;
     if (value) {
@@ -253,7 +247,7 @@ std::string CommandHandler::cmdDecr(const std::vector<std::string>& args) {
     }
     
     current--;
-    setValue(key, RedisValue(std::to_string(current)));
+    db.setValue(key, RedisValue(std::to_string(current)));
     return formatInteger(current);
 }
 
@@ -268,7 +262,7 @@ std::string CommandHandler::cmdIncrBy(const std::vector<std::string>& args) {
     }
     long long increment = parseInt(args[2]);
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     long long current = 0;
     if (value) {
         if (value->type != RedisValue::Type::STRING) {
@@ -281,7 +275,7 @@ std::string CommandHandler::cmdIncrBy(const std::vector<std::string>& args) {
     }
     
     current += increment;
-    setValue(key, RedisValue(std::to_string(current)));
+    db.setValue(key, RedisValue(std::to_string(current)));
     return formatInteger(current);
 }
 
@@ -296,7 +290,7 @@ std::string CommandHandler::cmdDecrBy(const std::vector<std::string>& args) {
     }
     long long decrement = parseInt(args[2]);
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     long long current = 0;
     if (value) {
         if (value->type != RedisValue::Type::STRING) {
@@ -309,7 +303,7 @@ std::string CommandHandler::cmdDecrBy(const std::vector<std::string>& args) {
     }
     
     current -= decrement;
-    setValue(key, RedisValue(std::to_string(current)));
+    db.setValue(key, RedisValue(std::to_string(current)));
     return formatInteger(current);
 }
 
@@ -319,7 +313,7 @@ std::string CommandHandler::cmdStrlen(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::STRING) {
         return formatInteger(0);
@@ -336,7 +330,7 @@ std::string CommandHandler::cmdAppend(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     const std::string& append_value = args[2];
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     std::string result;
     
     if (value && value->type == RedisValue::Type::STRING) {
@@ -345,7 +339,7 @@ std::string CommandHandler::cmdAppend(const std::vector<std::string>& args) {
         result = append_value;
     }
     
-    setValue(key, RedisValue(result));
+    db.setValue(key, RedisValue(result));
     return formatInteger(result.length());
 }
 
@@ -356,7 +350,7 @@ std::string CommandHandler::cmdMget(const std::vector<std::string>& args) {
     
     std::vector<std::string> results;
     for (size_t i = 1; i < args.size(); i++) {
-        RedisValue* value = getValue(args[i]);
+        RedisValue* value = db.getValue(args[i]);
         if (value && value->type == RedisValue::Type::STRING) {
             results.push_back(value->string_value);
         } else {
@@ -373,7 +367,7 @@ std::string CommandHandler::cmdMset(const std::vector<std::string>& args) {
     }
     
     for (size_t i = 1; i < args.size(); i += 2) {
-        setValue(args[i], RedisValue(args[i + 1]));
+        db.setValue(args[i], RedisValue(args[i + 1]));
     }
     
     return formatSimpleString("OK");
@@ -386,15 +380,15 @@ std::string CommandHandler::cmdLpush(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (value && value->type != RedisValue::Type::LIST) {
         return formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        setValue(key, RedisValue(RedisValue::Type::LIST));
-        value = getValue(key);
+        db.setValue(key, RedisValue(RedisValue::Type::LIST));
+        value = db.getValue(key);
     }
     
     for (size_t i = args.size() - 1; i >= 2; i--) {
@@ -410,15 +404,15 @@ std::string CommandHandler::cmdRpush(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (value && value->type != RedisValue::Type::LIST) {
         return formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        setValue(key, RedisValue(RedisValue::Type::LIST));
-        value = getValue(key);
+        db.setValue(key, RedisValue(RedisValue::Type::LIST));
+        value = db.getValue(key);
     }
     
     for (size_t i = 2; i < args.size(); i++) {
@@ -434,7 +428,7 @@ std::string CommandHandler::cmdLpop(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::LIST || value->list_value.empty()) {
         return formatNull();
@@ -444,7 +438,7 @@ std::string CommandHandler::cmdLpop(const std::vector<std::string>& args) {
     value->list_value.pop_front();
     
     if (value->list_value.empty()) {
-        deleteKey(key);
+        db.deleteKey(key);
     }
     
     return formatBulkString(result);
@@ -456,7 +450,7 @@ std::string CommandHandler::cmdRpop(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::LIST || value->list_value.empty()) {
         return formatNull();
@@ -466,7 +460,7 @@ std::string CommandHandler::cmdRpop(const std::vector<std::string>& args) {
     value->list_value.pop_back();
     
     if (value->list_value.empty()) {
-        deleteKey(key);
+        db.deleteKey(key);
     }
     
     return formatBulkString(result);
@@ -478,7 +472,7 @@ std::string CommandHandler::cmdLlen(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::LIST) {
         return formatInteger(0);
@@ -497,7 +491,7 @@ std::string CommandHandler::cmdLrange(const std::vector<std::string>& args) {
         return formatError("ERR value is not an integer or out of range");
     }
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value || value->type != RedisValue::Type::LIST) {
         return formatArray(std::vector<std::string>());
     }
@@ -539,7 +533,7 @@ std::string CommandHandler::cmdLindex(const std::vector<std::string>& args) {
         return formatError("ERR value is not an integer or out of range");
     }
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value || value->type != RedisValue::Type::LIST) {
         return formatNull();
     }
@@ -570,7 +564,7 @@ std::string CommandHandler::cmdLset(const std::vector<std::string>& args) {
         return formatError("ERR value is not an integer or out of range");
     }
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value || value->type != RedisValue::Type::LIST) {
         return formatError("ERR no such key");
     }
@@ -600,15 +594,15 @@ std::string CommandHandler::cmdSadd(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (value && value->type != RedisValue::Type::SET) {
         return formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        setValue(key, RedisValue(RedisValue::Type::SET));
-        value = getValue(key);
+        db.setValue(key, RedisValue(RedisValue::Type::SET));
+        value = db.getValue(key);
     }
     
     int added = 0;
@@ -627,7 +621,7 @@ std::string CommandHandler::cmdSrem(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::SET) {
         return formatInteger(0);
@@ -641,7 +635,7 @@ std::string CommandHandler::cmdSrem(const std::vector<std::string>& args) {
     }
     
     if (value->set_value.empty()) {
-        deleteKey(key);
+        db.deleteKey(key);
     }
     
     return formatInteger(removed);
@@ -655,7 +649,7 @@ std::string CommandHandler::cmdSismember(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     const std::string& member = args[2];
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value || value->type != RedisValue::Type::SET) {
         return formatInteger(0);
     }
@@ -669,7 +663,7 @@ std::string CommandHandler::cmdScard(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::SET) {
         return formatInteger(0);
@@ -684,7 +678,7 @@ std::string CommandHandler::cmdSmembers(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::SET) {
         return formatArray(std::vector<std::string>());
@@ -700,7 +694,7 @@ std::string CommandHandler::cmdSpop(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::SET || value->set_value.empty()) {
         return formatNull();
@@ -717,7 +711,7 @@ std::string CommandHandler::cmdSpop(const std::vector<std::string>& args) {
     value->set_value.erase(it);
     
     if (value->set_value.empty()) {
-        deleteKey(key);
+        db.deleteKey(key);
     }
     
     return formatBulkString(result);
@@ -730,15 +724,15 @@ std::string CommandHandler::cmdHset(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (value && value->type != RedisValue::Type::HASH) {
         return formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        setValue(key, RedisValue(RedisValue::Type::HASH));
-        value = getValue(key);
+        db.setValue(key, RedisValue(RedisValue::Type::HASH));
+        value = db.getValue(key);
     }
     
     int added = 0;
@@ -763,7 +757,7 @@ std::string CommandHandler::cmdHget(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     const std::string& field = args[2];
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value || value->type != RedisValue::Type::HASH) {
         return formatNull();
     }
@@ -782,7 +776,7 @@ std::string CommandHandler::cmdHdel(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::HASH) {
         return formatInteger(0);
@@ -796,7 +790,7 @@ std::string CommandHandler::cmdHdel(const std::vector<std::string>& args) {
     }
     
     if (value->hash_value.empty()) {
-        deleteKey(key);
+        db.deleteKey(key);
     }
     
     return formatInteger(deleted);
@@ -810,7 +804,7 @@ std::string CommandHandler::cmdHexists(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     const std::string& field = args[2];
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value || value->type != RedisValue::Type::HASH) {
         return formatInteger(0);
     }
@@ -824,7 +818,7 @@ std::string CommandHandler::cmdHlen(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::HASH) {
         return formatInteger(0);
@@ -839,7 +833,7 @@ std::string CommandHandler::cmdHkeys(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::HASH) {
         return formatArray(std::vector<std::string>());
@@ -859,7 +853,7 @@ std::string CommandHandler::cmdHvals(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::HASH) {
         return formatArray(std::vector<std::string>());
@@ -879,7 +873,7 @@ std::string CommandHandler::cmdHgetall(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value || value->type != RedisValue::Type::HASH) {
         return formatArray(std::vector<std::string>());
@@ -905,14 +899,14 @@ std::string CommandHandler::cmdExpire(const std::vector<std::string>& args) {
         return formatError("ERR value is not an integer or out of range");
     }
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value) {
         return formatInteger(0);
     }
     
     long long seconds = parseInt(args[2]);
     if (seconds <= 0) {
-        deleteKey(key);
+        db.deleteKey(key);
         return formatInteger(1);
     }
     
@@ -930,7 +924,7 @@ std::string CommandHandler::cmdExpireat(const std::vector<std::string>& args) {
         return formatError("ERR value is not an integer or out of range");
     }
     
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     if (!value) {
         return formatInteger(0);
     }
@@ -939,7 +933,7 @@ std::string CommandHandler::cmdExpireat(const std::vector<std::string>& args) {
     auto expiry_time = std::chrono::system_clock::from_time_t(timestamp);
     
     if (expiry_time <= std::chrono::system_clock::now()) {
-        deleteKey(key);
+        db.deleteKey(key);
         return formatInteger(1);
     }
     
@@ -954,7 +948,7 @@ std::string CommandHandler::cmdTtl(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value) {
         return formatInteger(-2); // Key doesn't exist
@@ -966,7 +960,7 @@ std::string CommandHandler::cmdTtl(const std::vector<std::string>& args) {
     
     auto now = std::chrono::system_clock::now();
     if (now >= value->expiry) {
-        deleteKey(key);
+        db.deleteKey(key);
         return formatInteger(-2); // Key expired
     }
     
@@ -980,7 +974,7 @@ std::string CommandHandler::cmdPersist(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    RedisValue* value = getValue(key);
+    RedisValue* value = db.getValue(key);
     
     if (!value) {
         return formatInteger(0);
@@ -1028,7 +1022,7 @@ std::string CommandHandler::cmdInfo(const std::vector<std::string>& /*args*/) {
     info << "total_commands_processed:" << total_commands_processed << "\r\n";
     info << "\r\n";
     info << "# Keyspace\r\n";
-    info << "db0:keys=" << database.size() << "\r\n";
+    info << "db0:keys=" << db.getDatabaseSize() << "\r\n";
     
     return formatBulkString(info.str());
 }
@@ -1038,7 +1032,7 @@ std::string CommandHandler::cmdFlushall(const std::vector<std::string>& args) {
         return formatError("ERR wrong number of arguments for 'flushall' command");
     }
     
-    database.clear();
+    db.clearDatabase();
     return formatSimpleString("OK");
 }
 
@@ -1048,13 +1042,7 @@ std::string CommandHandler::cmdKeys(const std::vector<std::string>& args) {
     }
     
     const std::string& pattern = args[1];
-    std::vector<std::string> matching_keys;
-    
-    for (const auto& pair : database) {
-        if (!pair.second.isExpired() && matchPattern(pattern, pair.first)) {
-            matching_keys.push_back(pair.first);
-        }
-    }
+    std::vector<std::string> matching_keys = db.getMatchingKeys(pattern); // Usar db
     
     return formatArray(matching_keys);
 }
@@ -1064,8 +1052,8 @@ std::string CommandHandler::cmdDbsize(const std::vector<std::string>& args) {
         return formatError("ERR wrong number of arguments for 'dbsize' command");
     }
     
-    cleanupExpiredKeys();
-    return formatInteger(database.size());
+    db.cleanupExpiredKeys(); // Cambiar a db
+    return formatInteger(db.getDatabaseSize()); // Cambiar a db
 }
 
 std::string CommandHandler::cmdTime(const std::vector<std::string>& args) {
@@ -1121,48 +1109,6 @@ std::string CommandHandler::formatNull() {
 
 bool CommandHandler::isValidKey(const std::string& key) {
     return !key.empty() && key.length() < 512;
-}
-
-void CommandHandler::cleanupExpiredKeys() {
-    auto it = database.begin();
-    while (it != database.end()) {
-        if (it->second.isExpired()) {
-            it = database.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-bool CommandHandler::keyExists(const std::string& key) {
-    auto it = database.find(key);
-    if (it != database.end() && !it->second.isExpired()) {
-        return true;
-    }
-    if (it != database.end() && it->second.isExpired()) {
-        database.erase(it);
-    }
-    return false;
-}
-
-RedisValue* CommandHandler::getValue(const std::string& key) {
-    auto it = database.find(key);
-    if (it != database.end()) {
-        if (it->second.isExpired()) {
-            database.erase(it);
-            return nullptr;
-        }
-        return &it->second;
-    }
-    return nullptr;
-}
-
-void CommandHandler::setValue(const std::string& key, RedisValue value) {
-    database[key] = std::move(value);
-}
-
-bool CommandHandler::deleteKey(const std::string& key) {
-    return database.erase(key) > 0;
 }
 
 bool CommandHandler::isInteger(const std::string& str) {
@@ -1222,14 +1168,4 @@ bool CommandHandler::matchPattern(const std::string& pattern, const std::string&
     }
     
     return p == pattern.length();
-}
-
-void CommandHandler::clearDatabase() {
-    std::lock_guard<std::mutex> lock(db_mutex);
-    database.clear();
-}
-
-size_t CommandHandler::getDatabaseSize() const {
-    std::lock_guard<std::mutex> lock(db_mutex);
-    return database.size();
 }
