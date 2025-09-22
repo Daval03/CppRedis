@@ -1,6 +1,6 @@
 #include "tcp_server.h"
 
-TCPServer::TCPServer(int port) : port(port), running(false), command_handler(redis_store) {
+TCPServer::TCPServer(int port) : port(port), running(false) {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         throw std::runtime_error("Failed to create socket: " + std::string(strerror(errno)));
@@ -21,7 +21,6 @@ TCPServer::~TCPServer() {
     if (server_fd != -1) {
         close(server_fd);
     }
-    std::cout << "TCP Server destroyed. Final store size: " << redis_store.size() << " keys" << std::endl;
 }
 
 void TCPServer::start() {
@@ -64,7 +63,6 @@ void TCPServer::stop() {
     // Stop all connections through ConnectionManager
     connection_manager.stopAllConnections();
     
-    std::cout << "Redis server stopped. Final store size: " << redis_store.size() << " keys" << std::endl;
 }
 
 void TCPServer::acceptConnections() {
@@ -112,6 +110,7 @@ size_t TCPServer::getActiveConnections() {
 void TCPServer::handleClient(int client_socket) {
     std::string buffer;            // persistent buffer
     std::vector<char> tmp(BUFFER_SIZE);
+    RESPParser parser;             // Necesitas una instancia del parser
 
     while (running) {
         ssize_t n = read(client_socket, tmp.data(), tmp.size());
@@ -122,14 +121,26 @@ void TCPServer::handleClient(int client_socket) {
         while (true) {
             std::vector<std::string> args;
             size_t consumed = 0;
-            if (!RESPParser::parse(buffer, args, consumed))
+            
+            // Usar la instancia del parser en lugar del método estático
+            RESPValue resp_value;
+            if (!parser.parse(buffer, resp_value, consumed))
                 break; // msg not complete
-
-            logCommand(args, consumed);
+            
+            // Convertir el RESPValue a vector de strings
+            args = parser.toStringVector(resp_value);
+            
+            std::cout << "Parsed command: ";
+            for (const auto& arg : args) {
+                std::cout << "'" << arg << "' ";
+            }
+            std::cout << std::endl;
             
             buffer.erase(0, consumed);
 
-            std::string resp = command_handler.processCommand(args);
+            //std::string resp = command_handler.processCommand(resp_value);
+            std::string resp = command_handler2.processCommand(resp_value);
+
             if (!resp.empty())
                 send(client_socket, resp.c_str(), resp.size(), 0);
         }

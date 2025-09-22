@@ -7,28 +7,24 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-//#include "resp_parser.h"
-//#include "redis_store.h"
-//#include "redis_command_handler.h"
-#include "connection_manager.h"
 
+#include "connection_manager.h"
 #include "../../src/resp/resp_parser.h"
-#include "../../src/redis/redis_store.h"
-#include "../../src/redis/redis_command_handler.h"
+#include "../../src/redis/command_handler.h"
 #include "../../src/utils/logger.h"
 
 class TCPServer {
 private:
     static const size_t BUFFER_SIZE = 4096;
+    const size_t MAX_BUFFER_SIZE = 1024 * 1024; // 1MB máximo
 
     int server_fd;
     int port;
     std::atomic<bool> running;
     
     // Redis-like storage
-    RedisStore redis_store;
-    RedisCommandHandler command_handler;
     ConnectionManager connection_manager; 
+    CommandHandler command_handler2;
     void acceptConnections();
     void handleClient(int client_socket);
     

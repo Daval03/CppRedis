@@ -19,8 +19,7 @@ SRCS = $(SRC_DIR)/main.cpp \
 		$(SERVER_DIR)/connection_manager.cpp \
 		$(RESP_DIR)/resp_parser.cpp \
 		$(RESP_DIR)/resp_value.cpp \
-		$(REDIS_DIR)/redis_command_handler.cpp \
-		$(REDIS_DIR)/redis_store.cpp \
+		$(REDIS_DIR)/command_handler.cpp \
 		$(UTILS_DIR)/logger.cpp 
 
         
