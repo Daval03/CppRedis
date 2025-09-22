@@ -13,6 +13,7 @@ UTILS_DIR = utils
 RESP_DIR = resp
 REDIS_DIR = redis
 REDIS_DATABASE_DIR = redis/database
+REDIS_COMMAND_DIR = redis/command
 
 # Archivos fuente
 SRCS = $(SRC_DIR)/main.cpp \
@@ -23,6 +24,7 @@ SRCS = $(SRC_DIR)/main.cpp \
 		$(RESP_DIR)/resp_formatter.cpp \
 		$(REDIS_DIR)/command_handler.cpp \
 		$(REDIS_DATABASE_DIR)/redis_database.cpp \
+		$(UTILS_DIR)/utility_functions.cpp \
 		$(UTILS_DIR)/logger.cpp 
 
         

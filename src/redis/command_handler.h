@@ -21,6 +21,7 @@
 #include "../../src/redis/database/redis_value.h"
 #include "../../src/redis/database/redis_database.h"
 
+#include "../../src/utils/utility_functions.h"
 
 // Command handler class
 class CommandHandler {
@@ -39,16 +40,7 @@ private:
     
     // Helper methods
     void initializeCommands();
-    //std::string formatResponse(const RESPValue& value);
     
-    // std::string formatError(const std::string& message);
-    // std::string formatSimpleString(const std::string& str);
-    // std::string formatBulkString(const std::string& str);
-    // std::string formatInteger(long long value);
-    // std::string formatArray(const std::vector<std::string>& items);
-    // std::string formatNull();
-    
-    bool isValidKey(const std::string& key);
     
     // String commands
     std::string cmdSet(const std::vector<std::string>& args);
@@ -107,12 +99,6 @@ private:
     std::string cmdKeys(const std::vector<std::string>& args);
     std::string cmdDbsize(const std::vector<std::string>& args);
     std::string cmdTime(const std::vector<std::string>& args);
-    
-    // Utility functions
-    bool isInteger(const std::string& str);
-    long long parseInt(const std::string& str);
-    std::string toUpper(const std::string& str);
-    bool matchPattern(const std::string& pattern, const std::string& str);
     
 public:
     CommandHandler();

@@ -76,7 +76,7 @@ std::string CommandHandler::processCommand(const std::vector<std::string>& args)
         db.cleanupExpiredKeys();
     }
     
-    std::string command = toUpper(args[0]);
+    std::string command = UtilityFunctions::toUpper(args[0]);
     auto it = commands.find(command);
     
     if (it == commands.end()) {
@@ -107,17 +107,17 @@ std::string CommandHandler::cmdSet(const std::vector<std::string>& args) {
             return RESPFormatter::formatError("ERR syntax error");
         }
         
-        std::string param = toUpper(args[i]);
+        std::string param = UtilityFunctions::toUpper(args[i]);
         if (param == "EX") {
-            if (!isInteger(args[i + 1])) {
+            if (!UtilityFunctions::isInteger(args[i + 1])) {
                 return RESPFormatter::formatError("ERR value is not an integer or out of range");
             }
-            redis_value.setExpiry(std::chrono::seconds(parseInt(args[i + 1])));
+            redis_value.setExpiry(std::chrono::seconds(UtilityFunctions::parseInt(args[i + 1])));
         } else if (param == "PX") {
-            if (!isInteger(args[i + 1])) {
+            if (!UtilityFunctions::isInteger(args[i + 1])) {
                 return RESPFormatter::formatError("ERR value is not an integer or out of range");
             }
-            redis_value.setExpiry(std::chrono::milliseconds(parseInt(args[i + 1])));
+            redis_value.setExpiry(std::chrono::milliseconds(UtilityFunctions::parseInt(args[i + 1])));
         } else if (param == "NX") {
             if (db.keyExists(key)) {
                 return RESPFormatter::formatNull();
@@ -215,10 +215,10 @@ std::string CommandHandler::cmdIncr(const std::vector<std::string>& args) {
         if (value->type != RedisValue::Type::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
-        if (!isInteger(value->string_value)) {
+        if (!UtilityFunctions::isInteger(value->string_value)) {
             return RESPFormatter::formatError("ERR value is not an integer or out of range");
         }
-        current = parseInt(value->string_value);
+        current = UtilityFunctions::parseInt(value->string_value);
     }
     
     current++;
@@ -239,10 +239,10 @@ std::string CommandHandler::cmdDecr(const std::vector<std::string>& args) {
         if (value->type != RedisValue::Type::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
-        if (!isInteger(value->string_value)) {
+        if (!UtilityFunctions::isInteger(value->string_value)) {
             return RESPFormatter::formatError("ERR value is not an integer or out of range");
         }
-        current = parseInt(value->string_value);
+        current = UtilityFunctions::parseInt(value->string_value);
     }
     
     current--;
@@ -256,10 +256,10 @@ std::string CommandHandler::cmdIncrBy(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    if (!isInteger(args[2])) {
+    if (!UtilityFunctions::isInteger(args[2])) {
         return RESPFormatter::formatError("ERR value is not an integer or out of range");
     }
-    long long increment = parseInt(args[2]);
+    long long increment = UtilityFunctions::parseInt(args[2]);
     
     RedisValue* value = db.getValue(key);
     long long current = 0;
@@ -267,10 +267,10 @@ std::string CommandHandler::cmdIncrBy(const std::vector<std::string>& args) {
         if (value->type != RedisValue::Type::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
-        if (!isInteger(value->string_value)) {
+        if (!UtilityFunctions::isInteger(value->string_value)) {
             return RESPFormatter::formatError("ERR value is not an integer or out of range");
         }
-        current = parseInt(value->string_value);
+        current = UtilityFunctions::parseInt(value->string_value);
     }
     
     current += increment;
@@ -284,10 +284,10 @@ std::string CommandHandler::cmdDecrBy(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    if (!isInteger(args[2])) {
+    if (!UtilityFunctions::isInteger(args[2])) {
         return RESPFormatter::formatError("ERR value is not an integer or out of range");
     }
-    long long decrement = parseInt(args[2]);
+    long long decrement = UtilityFunctions::parseInt(args[2]);
     
     RedisValue* value = db.getValue(key);
     long long current = 0;
@@ -295,10 +295,10 @@ std::string CommandHandler::cmdDecrBy(const std::vector<std::string>& args) {
         if (value->type != RedisValue::Type::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
-        if (!isInteger(value->string_value)) {
+        if (!UtilityFunctions::isInteger(value->string_value)) {
             return RESPFormatter::formatError("ERR value is not an integer or out of range");
         }
-        current = parseInt(value->string_value);
+        current = UtilityFunctions::parseInt(value->string_value);
     }
     
     current -= decrement;
@@ -486,7 +486,7 @@ std::string CommandHandler::cmdLrange(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    if (!isInteger(args[2]) || !isInteger(args[3])) {
+    if (!UtilityFunctions::isInteger(args[2]) || !UtilityFunctions::isInteger(args[3])) {
         return RESPFormatter::formatError("ERR value is not an integer or out of range");
     }
     
@@ -495,8 +495,8 @@ std::string CommandHandler::cmdLrange(const std::vector<std::string>& args) {
         return RESPFormatter::formatArray(std::vector<std::string>());
     }
     
-    long long start = parseInt(args[2]);
-    long long end = parseInt(args[3]);
+    long long start = UtilityFunctions::parseInt(args[2]);
+    long long end = UtilityFunctions::parseInt(args[3]);
     
     const auto& list = value->list_value;
     long long list_size = static_cast<long long>(list.size());
@@ -528,7 +528,7 @@ std::string CommandHandler::cmdLindex(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    if (!isInteger(args[2])) {
+    if (!UtilityFunctions::isInteger(args[2])) {
         return RESPFormatter::formatError("ERR value is not an integer or out of range");
     }
     
@@ -537,7 +537,7 @@ std::string CommandHandler::cmdLindex(const std::vector<std::string>& args) {
         return RESPFormatter::formatNull();
     }
     
-    long long index = parseInt(args[2]);
+    long long index = UtilityFunctions::parseInt(args[2]);
     const auto& list = value->list_value;
     long long list_size = static_cast<long long>(list.size());
     
@@ -559,7 +559,7 @@ std::string CommandHandler::cmdLset(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    if (!isInteger(args[2])) {
+    if (!UtilityFunctions::isInteger(args[2])) {
         return RESPFormatter::formatError("ERR value is not an integer or out of range");
     }
     
@@ -568,7 +568,7 @@ std::string CommandHandler::cmdLset(const std::vector<std::string>& args) {
         return RESPFormatter::formatError("ERR no such key");
     }
     
-    long long index = parseInt(args[2]);
+    long long index = UtilityFunctions::parseInt(args[2]);
     auto& list = value->list_value;
     long long list_size = static_cast<long long>(list.size());
     
@@ -894,7 +894,7 @@ std::string CommandHandler::cmdExpire(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    if (!isInteger(args[2])) {
+    if (!UtilityFunctions::isInteger(args[2])) {
         return RESPFormatter::formatError("ERR value is not an integer or out of range");
     }
     
@@ -903,7 +903,7 @@ std::string CommandHandler::cmdExpire(const std::vector<std::string>& args) {
         return RESPFormatter::formatInteger(0);
     }
     
-    long long seconds = parseInt(args[2]);
+    long long seconds = UtilityFunctions::parseInt(args[2]);
     if (seconds <= 0) {
         db.deleteKey(key);
         return RESPFormatter::formatInteger(1);
@@ -919,7 +919,7 @@ std::string CommandHandler::cmdExpireat(const std::vector<std::string>& args) {
     }
     
     const std::string& key = args[1];
-    if (!isInteger(args[2])) {
+    if (!UtilityFunctions::isInteger(args[2])) {
         return RESPFormatter::formatError("ERR value is not an integer or out of range");
     }
     
@@ -928,7 +928,7 @@ std::string CommandHandler::cmdExpireat(const std::vector<std::string>& args) {
         return RESPFormatter::formatInteger(0);
     }
     
-    long long timestamp = parseInt(args[2]);
+    long long timestamp = UtilityFunctions::parseInt(args[2]);
     auto expiry_time = std::chrono::system_clock::from_time_t(timestamp);
     
     if (expiry_time <= std::chrono::system_clock::now()) {
@@ -1071,67 +1071,4 @@ std::string CommandHandler::cmdTime(const std::vector<std::string>& args) {
     };
     
     return RESPFormatter::formatArray(time_result);
-}
-
-bool CommandHandler::isValidKey(const std::string& key) {
-    return !key.empty() && key.length() < 512;
-}
-
-bool CommandHandler::isInteger(const std::string& str) {
-    if (str.empty()) return false;
-    
-    size_t start = 0;
-    if (str[0] == '-' || str[0] == '+') {
-        if (str.length() == 1) return false;
-        start = 1;
-    }
-    
-    for (size_t i = start; i < str.length(); i++) {
-        if (!std::isdigit(str[i])) return false;
-    }
-    
-    return true;
-}
-
-long long CommandHandler::parseInt(const std::string& str) {
-    try {
-        return std::stoll(str);
-    } catch (...) {
-        return 0;
-    }
-}
-
-std::string CommandHandler::toUpper(const std::string& str) {
-    std::string result = str;
-    std::transform(result.begin(), result.end(), result.begin(), ::toupper);
-    return result;
-}
-
-bool CommandHandler::matchPattern(const std::string& pattern, const std::string& str) {
-    if (pattern == "*") return true;
-    
-    // Simple pattern matching - supports * and ?
-    size_t p = 0, s = 0;
-    size_t star_p = std::string::npos, star_s = 0;
-    
-    while (s < str.length()) {
-        if (p < pattern.length() && (pattern[p] == '?' || pattern[p] == str[s])) {
-            p++;
-            s++;
-        } else if (p < pattern.length() && pattern[p] == '*') {
-            star_p = p++;
-            star_s = s;
-        } else if (star_p != std::string::npos) {
-            p = star_p + 1;
-            s = ++star_s;
-        } else {
-            return false;
-        }
-    }
-    
-    while (p < pattern.length() && pattern[p] == '*') {
-        p++;
-    }
-    
-    return p == pattern.length();
 }
