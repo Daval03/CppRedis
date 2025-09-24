@@ -16,18 +16,6 @@ std::string RESPFormatter::formatInteger(long long value) {
     return ":" + std::to_string(value) + "\r\n";
 }
 
-// std::string RESPFormatter::formatArray(const std::vector<std::string>& items) {
-//     std::string response = "*" + std::to_string(items.size()) + "\r\n";
-//     for (const auto& item : items) {
-//         if (item.empty()) {
-//             response += formatNull();
-//         } else {
-//             response += formatBulkString(item);
-//         }
-//     }
-//     return response;
-// }
-
 std::string RESPFormatter::formatArray(const std::vector<std::string>& items) {
     std::string response = "*" + std::to_string(items.size()) + "\r\n";
     for (const auto& item : items) {

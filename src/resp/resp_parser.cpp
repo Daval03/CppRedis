@@ -133,61 +133,6 @@ bool RESPParser::parseArray(const std::string& input, size_t& pos, RESPValue& re
     return true;
 }
 
-// Formatting methods
-std::string RESPParser::format(const RESPValue& value) {
-    switch (value.type) {
-        case RESPType::SIMPLE_STRING:
-            return formatSimpleString(value.getString());
-        case RESPType::ERROR:
-            return formatError(value.getString());
-        case RESPType::INTEGER:
-            return formatInteger(value.getInteger());
-        case RESPType::BULK_STRING:
-            return formatBulkString(value.getString());
-        case RESPType::ARRAY:
-            return formatArray(value.getArray());
-        case RESPType::NULL_VALUE:
-            return formatNull();
-        default:
-            return "";
-    }
-}
-
-std::string RESPParser::formatBulkString(const std::string& str) {
-    return "$" + std::to_string(str.length()) + "\r\n" + str + "\r\n";
-}
-
-std::string RESPParser::formatInteger(long long value) {
-    return ":" + std::to_string(value) + "\r\n";
-}
-
-std::string RESPParser::formatSimpleString(const std::string& str) {
-    return "+" + str + "\r\n";
-}
-
-std::string RESPParser::formatError(const std::string& error) {
-    return "-" + error + "\r\n";
-}
-
-std::string RESPParser::formatArray(const std::vector<RESPValue>& items) {
-    std::string response = "*" + std::to_string(items.size()) + "\r\n";
-    for (const auto& item : items) {
-        response += format(item);
-    }
-    return response;
-}
-
-std::string RESPParser::formatArray(const std::vector<std::string>& items) {
-    std::string response = "*" + std::to_string(items.size()) + "\r\n";
-    for (const auto& item : items) {
-        response += formatBulkString(item);
-    }
-    return response;
-}
-
-std::string RESPParser::formatNull() {
-    return "$-1\r\n";
-}
 
 // Utility methods
 std::vector<std::string> RESPParser::toStringVector(const RESPValue& value) {

@@ -35,16 +35,6 @@ public:
     // New comprehensive parsing method
     static bool parse(const std::string& input, RESPValue& result, size_t& consumed);
     
-    // Formatting methods
-    static std::string formatBulkString(const std::string& str);
-    static std::string formatInteger(long long value);
-    static std::string formatSimpleString(const std::string& str);
-    static std::string formatError(const std::string& error);
-    static std::string formatArray(const std::vector<RESPValue>& items);
-    static std::string formatArray(const std::vector<std::string>& items);  // Legacy
-    static std::string formatNull();
-    static std::string format(const RESPValue& value);
-    
     // Utility methods
     static std::vector<std::string> toStringVector(const RESPValue& value);
     static void printValue(const RESPValue& value, int indent = 0);
