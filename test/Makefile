@@ -12,9 +12,8 @@ SRC_FILES = ../src/resp/resp_parser.cpp \
 
 # Lista de tests
 TESTS = resp/test_resp_value.cpp \
-       resp/test_resp_parser.cpp    
-#         redis/test_redis_commands.cpp \
-#         utils/test_logger.cpp
+	resp/test_resp_formatter.cpp \
+	resp/test_resp_parser.cpp    
 
 # Generar nombres de ejecutables en build
 TEST_TARGETS = $(TESTS:%.cpp=build/%)
@@ -34,14 +33,11 @@ test_all: $(TEST_TARGETS)
 		./$$test; \
 	done
 
-test_formatter: build/resp/test_resp_formatter
-	./$<
-
-test_parser: build/resp/test_resp_parser
+1: build/resp/test_resp_formatter
 	./$<
 
 # Limpiar build
 clean:
-	rm -rf build
+	rm -rf build/*
 
 .PHONY: all test_all clean

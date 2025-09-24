@@ -1,16 +1,7 @@
 #include <gtest/gtest.h>
 #include "resp/resp_value.h"
 
-class RESPValueTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        // Setup code if needed
-    }
-
-    void TearDown() override {
-        // Cleanup code if needed
-    }
-};
+class RESPValueTest : public ::testing::Test {};
 
 // Test default constructor
 TEST_F(RESPValueTest, DefaultConstructor) {
