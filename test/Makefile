@@ -1,22 +1,32 @@
 # Compilador y flags
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread -I../src
-LDFLAGS = -pthread -lgtest -lgtest_main
+LDFLAGS = -pthread -lgtest -lgtest_main -lgmock
 
 # Archivos fuente comunes
-SRC_FILES = ../src/resp/resp_parser.cpp \
-            ../src/resp/resp_value.cpp \
-            ../src/resp/resp_formatter.cpp \
-            ../src/utils/logger.cpp \
-            ../src/utils/utility_functions.cpp \
-			../src/server/connection_manager.cpp
+SRC_FILES = ../src/server/connection_manager.cpp \
+       		../src/server/tcp_server.cpp \
+			../src/utils/logger.cpp \
+			../src/utils/utility_functions.cpp \
+			../src/resp/resp_formatter.cpp \
+			../src/resp/resp_parser.cpp \
+			../src/resp/resp_value.cpp \
+			../src/redis/command_handler.cpp \
+			../src/redis/database/redis_database.cpp \
+			../src/redis/commands/string_commands.cpp \
+			../src/redis/commands/hash_commands.cpp \
+			../src/redis/commands/set_commands.cpp \
+			../src/redis/commands/ttl_commands.cpp \
+			../src/redis/commands/server_commands.cpp \
+			../src/redis/commands/list_commands.cpp
 
 # Lista de tests
 TESTS = resp/test_resp_value.cpp \
-	resp/test_resp_formatter.cpp \
-	resp/test_resp_parser.cpp \
-	utils/test_utility_functions.cpp \
-	server/test_connection_manager.cpp 
+		resp/test_resp_formatter.cpp \
+		resp/test_resp_parser.cpp \
+		utils/test_utility_functions.cpp \
+		server/test_connection_manager.cpp \
+		server/test_tcp_server.cpp
 
 # Generar nombres de ejecutables en build
 TEST_TARGETS = $(TESTS:%.cpp=build/%)
