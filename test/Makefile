@@ -8,13 +8,15 @@ SRC_FILES = ../src/resp/resp_parser.cpp \
             ../src/resp/resp_value.cpp \
             ../src/resp/resp_formatter.cpp \
             ../src/utils/logger.cpp \
-            ../src/utils/utility_functions.cpp
+            ../src/utils/utility_functions.cpp \
+			../src/server/connection_manager.cpp
 
 # Lista de tests
 TESTS = resp/test_resp_value.cpp \
 	resp/test_resp_formatter.cpp \
 	resp/test_resp_parser.cpp \
-	utils/test_utility_functions.cpp 
+	utils/test_utility_functions.cpp \
+	server/test_connection_manager.cpp 
 
 # Generar nombres de ejecutables en build
 TEST_TARGETS = $(TESTS:%.cpp=build/%)

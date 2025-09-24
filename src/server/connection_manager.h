@@ -19,7 +19,7 @@ private:
     void cleanupFinishedThreads();
 
 public:
-    static const int MAX_CLIENTS = 100;
+    static inline const int MAX_CLIENTS = 100;
     ~ConnectionManager();
     
     bool canAcceptNewConnection() const;

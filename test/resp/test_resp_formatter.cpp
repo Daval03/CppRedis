@@ -153,8 +153,3 @@ TEST_F(RESPFormatterTest, RESPProtocolCompliance) {
     std::string array_result = RESPFormatter::formatArray({"test"});
     EXPECT_EQ(array_result.substr(array_result.length() - 2), "\r\n");
 }
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

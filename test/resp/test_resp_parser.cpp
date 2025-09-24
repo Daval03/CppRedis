@@ -275,8 +275,3 @@ TEST_F(RESPParserTest, EdgeCases) {
     deepNested += ":1\r\n";
     EXPECT_FALSE(RESPParser::parse(deepNested, result, consumed));
 }
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
