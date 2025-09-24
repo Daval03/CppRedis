@@ -26,6 +26,7 @@ struct RESPValue {
     bool isBulkString() const;
     bool isArray() const;
     bool isNull() const;
+    bool isError() const;
     
     std::string getString() const;
     long long getInteger() const;

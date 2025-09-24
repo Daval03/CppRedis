@@ -5,9 +5,9 @@ void logCommand(const std::vector<std::string>& args, size_t bytes_consumed) {
     std::cout << "🐛 [CMD] ";
     for (size_t i = 0; i < args.size(); ++i) {
         if (i == 0) {
-            std::cout << "\033[1;32m" << args[i] << "\033[0m"; // Comando en verde
+            std::cout << "\033[1;32m" << args[i] << "\033[0m"; // Command in green
         } else {
-            std::cout << "\033[1;34m" << args[i] << "\033[0m"; // Argumentos en azul
+            std::cout << "\033[1;34m" << args[i] << "\033[0m"; // Arguments in blue
         }
         if (i < args.size() - 1) std::cout << " ";
     }

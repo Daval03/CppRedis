@@ -12,16 +12,6 @@ bool RESPParser::parse(const std::string& input, RESPValue& result, size_t& cons
     return parseValue(input, pos, result, 0) && (consumed = pos, true);
 }
 
-// Legacy method for backward compatibility
-bool RESPParser::parse(const std::string& input, std::vector<std::string>& result, size_t& consumed) {
-    RESPValue value(RESPType::NULL_VALUE);  // Initialize with explicit type
-    if (!parse(input, value, consumed)) return false;
-    
-    if (!value.isArray()) return false;
-    
-    result = toStringVector(value);
-    return true;
-}
 
 // Core recursive parsing logic
 bool RESPParser::parseValue(const std::string& input, size_t& pos, RESPValue& result, int depth) {
@@ -315,71 +305,3 @@ std::vector<std::string> parsePlainText(const std::string& input) {
     }
     return result;
 }
-
-// // Test main function
-// int main() {
-//     // Test various RESP2 types
-//     std::vector<std::string> test_cases = {
-//         // Simple String
-//         "+OK\r\n",
-        
-//         // Error
-//         "-ERR unknown command 'foobar'\r\n",
-        
-//         // Integer
-//         ":1000\r\n",
-        
-//         // Bulk String
-//         "$6\r\nfoobar\r\n",
-        
-//         // NULL Bulk String
-//         "$-1\r\n",
-        
-//         // Array with mixed types
-//         "*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nfoobar\r\n",
-        
-//         // Original test case
-//         "*2\r\n:5\r\n+OK\r\n",
-        
-//         // Nested array
-//         "*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n",
-        
-//         // Empty array
-//         "*0\r\n"
-//     };
-    
-//     for (size_t i = 0; i < test_cases.size(); ++i) {
-//         std::cout << "=== Test Case " << (i + 1) << " ===" << std::endl;
-//         std::cout << "Input: " << test_cases[i] << std::endl;
-        
-//         RESPValue result(RESPType::NULL_VALUE);  // Initialize with explicit type
-//         size_t consumed;
-        
-//         if (RESPParser::parse(test_cases[i], result, consumed)) {
-//             std::cout << "Parsed successfully (consumed " << consumed << " bytes):" << std::endl;
-//             RESPParser::printValue(result);
-            
-//             // Test formatting
-//             std::string formatted = RESPParser::format(result);
-//             std::cout << "Formatted: " << formatted << std::endl;
-            
-//             // Test legacy compatibility for arrays
-//             if (result.isArray()) {
-//                 std::vector<std::string> legacy_result;
-//                 size_t legacy_consumed;
-//                 if (RESPParser::parse(test_cases[i], legacy_result, legacy_consumed)) {
-//                     std::cout << "Legacy result: ";
-//                     for (const auto& str : legacy_result) {
-//                         std::cout << "\"" << str << "\" ";
-//                     }
-//                     std::cout << std::endl;
-//                 }
-//             }
-//         } else {
-//             std::cout << "Failed to parse!" << std::endl;
-//         }
-//         std::cout << std::endl;
-//     }
-    
-//     return 0;
-// }

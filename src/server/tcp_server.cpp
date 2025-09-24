@@ -124,22 +124,18 @@ void TCPServer::handleClient(int client_socket) {
             
             // Usar la instancia del parser en lugar del método estático
             RESPValue resp_value;
-            if (!parser.parse(buffer, resp_value, consumed))
-                break; // msg not complete
+            if (!parser.parse(buffer, resp_value, consumed))break; // msg not complete
             
-            // Convertir el RESPValue a vector de strings
+            // Convert RESPValue to vector of strings
             args = parser.toStringVector(resp_value);
             
-            std::cout << "Parsed command: ";
-            for (const auto& arg : args) {
-                std::cout << "'" << arg << "' ";
-            }
-            std::cout << std::endl;
+            logCommand(args, consumed);
             
+            // Remove processed data from buffer
             buffer.erase(0, consumed);
 
+            // Process the command
             std::string resp = command_handler.processCommand(args);
-
             if (!resp.empty())
                 send(client_socket, resp.c_str(), resp.size(), 0);
         }

@@ -44,6 +44,10 @@ bool RESPValue::isNull() const {
     return type == RESPType::NULL_VALUE; 
 }
 
+bool RESPValue::isError() const { 
+    return type == RESPType::ERROR; 
+}
+
 std::string RESPValue::getString() const {
     if (std::holds_alternative<std::string>(data)) {
         return std::get<std::string>(data);

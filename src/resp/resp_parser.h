@@ -35,9 +35,6 @@ public:
     // New comprehensive parsing method
     static bool parse(const std::string& input, RESPValue& result, size_t& consumed);
     
-    // Legacy method for backward compatibility (arrays of bulk strings only)
-    static bool parse(const std::string& input, std::vector<std::string>& result, size_t& consumed);
-    
     // Formatting methods
     static std::string formatBulkString(const std::string& str);
     static std::string formatInteger(long long value);

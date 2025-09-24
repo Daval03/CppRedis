@@ -1,28 +1,47 @@
-CXX       = g++
-CXXFLAGS  = -std=c++17 -I../src -pthread
-LDFLAGS   = -lgtest -lgtest_main -pthread
+# Compilador y flags
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread -I../src
+LDFLAGS = -pthread -lgtest -lgtest_main
 
-BUILD_DIR       = build
-SRC_SERVER_DIR  = ../src/server
-TEST_SERVER_DIR = ../test/server
+# Archivos fuente comunes
+SRC_FILES = ../src/resp/resp_parser.cpp \
+            ../src/resp/resp_value.cpp \
+            ../src/resp/resp_formatter.cpp \
+            ../src/utils/logger.cpp \
+            ../src/utils/utility_functions.cpp
 
-# === List of test ===
-TESTS = test_resp_parser   # More test
+# Lista de tests
+TESTS = resp/test_resp_value.cpp \
+       resp/test_resp_parser.cpp    
+#         redis/test_redis_commands.cpp \
+#         utils/test_logger.cpp
 
-# Commands for each file
-test_resp_parser: $(BUILD_DIR)/test_resp_parser
+# Generar nombres de ejecutables en build
+TEST_TARGETS = $(TESTS:%.cpp=build/%)
+
+# Regla principal
+all: $(TEST_TARGETS)
+
+# Regla genérica para compilar tests
+build/%: %.cpp $(SRC_FILES)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(SRC_FILES) $(LDFLAGS)
+
+# Ejecutar todos los tests
+test_all: $(TEST_TARGETS)
+	@for test in $^; do \
+		echo "Ejecutando $$test..."; \
+		./$$test; \
+	done
+
+test_formatter: build/resp/test_resp_formatter
 	./$<
 
-# Compile each test 
-$(BUILD_DIR)/%: $(SRC_SERVER_DIR)/resp_parser.cpp $(TEST_SERVER_DIR)/%.cpp
-	@mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+test_parser: build/resp/test_resp_parser
+	./$<
 
-# Compile all test
-test_all: $(addprefix $(BUILD_DIR)/, $(TESTS))
-	@for t in $(TESTS); do echo "== Running $$t =="; ./$(BUILD_DIR)/$$t; done
-
+# Limpiar build
 clean:
-	rm -f $(BUILD_DIR)/*
+	rm -rf build
 
-.PHONY: $(TESTS) test_all clean
+.PHONY: all test_all clean
