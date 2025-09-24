@@ -8,7 +8,7 @@
 #include "enum/redis_type.h"
 
 struct RedisValue {
-    RedisType type;  // src/enum/redis_type.h
+    RedisType type;
 
     std::string string_value;
     std::list<std::string> list_value;
