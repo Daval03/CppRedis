@@ -19,7 +19,7 @@ std::string ListCommands::cmdLpush(const std::vector<std::string>& args) {
         value = db.getValue(key);
     }
     
-    for (size_t i = args.size() - 1; i >= 2; i--) {
+    for (size_t i = 2; i < args.size(); i++) {
         value->list_value.push_front(args[i]);
     }
     
