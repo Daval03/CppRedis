@@ -27,7 +27,9 @@ TESTS = resp/test_resp_value.cpp \
 		utils/test_utility_functions.cpp \
 		server/test_connection_manager.cpp \
 		server/test_tcp_server.cpp \
-		redis/test_redis_value.cpp
+		redis/test_redis_value.cpp \
+		redis/test_redis_database.cpp \
+		redis/test_ttl_commands.cpp
 
 # Generar nombres de ejecutables en build
 TEST_TARGETS = $(TESTS:%.cpp=build/%)
