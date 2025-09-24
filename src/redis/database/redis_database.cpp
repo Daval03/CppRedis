@@ -11,7 +11,6 @@ bool RedisDatabase::keyExists(const std::string& key) {
     }
     return false;
 }
-
 RedisValue* RedisDatabase::getValue(const std::string& key) {
     std::lock_guard<std::mutex> lock(db_mutex);
     auto it = database.find(key);

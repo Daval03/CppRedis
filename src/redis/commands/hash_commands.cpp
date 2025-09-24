@@ -10,12 +10,12 @@ std::string HashCommands::cmdHset(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (value && value->type != RedisValue::Type::HASH) {
+    if (value && value->type != RedisType::HASH) {
         return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::HASH));
+        db.setValue(key, RedisValue(RedisType::HASH));
         value = db.getValue(key);
     }
     
@@ -42,7 +42,7 @@ std::string HashCommands::cmdHget(const std::vector<std::string>& args) {
     const std::string& field = args[2];
     
     RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::HASH) {
+    if (!value || value->type != RedisType::HASH) {
         return RESPFormatter::formatNull();
     }
     
@@ -62,7 +62,7 @@ std::string HashCommands::cmdHdel(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::HASH) {
+    if (!value || value->type != RedisType::HASH) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -89,7 +89,7 @@ std::string HashCommands::cmdHexists(const std::vector<std::string>& args) {
     const std::string& field = args[2];
     
     RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::HASH) {
+    if (!value || value->type != RedisType::HASH) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -104,7 +104,7 @@ std::string HashCommands::cmdHlen(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::HASH) {
+    if (!value || value->type != RedisType::HASH) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -119,7 +119,7 @@ std::string HashCommands::cmdHkeys(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::HASH) {
+    if (!value || value->type != RedisType::HASH) {
         return RESPFormatter::formatArray(std::vector<std::string>());
     }
     
@@ -139,7 +139,7 @@ std::string HashCommands::cmdHvals(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::HASH) {
+    if (!value || value->type != RedisType::HASH) {
         return RESPFormatter::formatArray(std::vector<std::string>());
     }
     
@@ -159,7 +159,7 @@ std::string HashCommands::cmdHgetall(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::HASH) {
+    if (!value || value->type != RedisType::HASH) {
         return RESPFormatter::formatArray(std::vector<std::string>());
     }
     

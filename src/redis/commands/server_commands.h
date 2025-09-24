@@ -9,7 +9,7 @@
 #include "resp/resp_formatter.h"
 #include "redis/database/redis_value.h"
 #include "utils/utility_functions.h"
-
+#include "enum/redis_type.h"
 class ServerCommands {
 private:
     RedisDatabase& db;

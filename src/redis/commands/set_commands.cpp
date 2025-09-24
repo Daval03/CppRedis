@@ -10,12 +10,12 @@ std::string SetCommands::cmdSadd(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (value && value->type != RedisValue::Type::SET) {
+    if (value && value->type != RedisType::SET) {
         return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::SET));
+        db.setValue(key, RedisValue(RedisType::SET));
         value = db.getValue(key);
     }
     
@@ -37,7 +37,7 @@ std::string SetCommands::cmdSrem(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::SET) {
+    if (!value || value->type != RedisType::SET) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -64,7 +64,7 @@ std::string SetCommands::cmdSismember(const std::vector<std::string>& args) {
     const std::string& member = args[2];
     
     RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::SET) {
+    if (!value || value->type != RedisType::SET) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -79,7 +79,7 @@ std::string SetCommands::cmdScard(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::SET) {
+    if (!value || value->type != RedisType::SET) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -94,7 +94,7 @@ std::string SetCommands::cmdSmembers(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::SET) {
+    if (!value || value->type != RedisType::SET) {
         return RESPFormatter::formatArray(std::vector<std::string>());
     }
     
@@ -110,7 +110,7 @@ std::string SetCommands::cmdSpop(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::SET || value->set_value.empty()) {
+    if (!value || value->type != RedisType::SET || value->set_value.empty()) {
         return RESPFormatter::formatNull();
     }
     

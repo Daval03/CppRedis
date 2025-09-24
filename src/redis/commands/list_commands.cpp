@@ -10,12 +10,12 @@ std::string ListCommands::cmdLpush(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (value && value->type != RedisValue::Type::LIST) {
+    if (value && value->type != RedisType::LIST) {
         return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::LIST));
+        db.setValue(key, RedisValue(RedisType::LIST));
         value = db.getValue(key);
     }
     
@@ -34,12 +34,12 @@ std::string ListCommands::cmdRpush(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (value && value->type != RedisValue::Type::LIST) {
+    if (value && value->type != RedisType::LIST) {
         return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
     }
     
     if (!value) {
-        db.setValue(key, RedisValue(RedisValue::Type::LIST));
+        db.setValue(key, RedisValue(RedisType::LIST));
         value = db.getValue(key);
     }
     
@@ -58,7 +58,7 @@ std::string ListCommands::cmdLpop(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::LIST || value->list_value.empty()) {
+    if (!value || value->type != RedisType::LIST || value->list_value.empty()) {
         return RESPFormatter::formatNull();
     }
     
@@ -80,7 +80,7 @@ std::string ListCommands::cmdRpop(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::LIST || value->list_value.empty()) {
+    if (!value || value->type != RedisType::LIST || value->list_value.empty()) {
         return RESPFormatter::formatNull();
     }
     
@@ -102,7 +102,7 @@ std::string ListCommands::cmdLlen(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::LIST) {
+    if (!value || value->type != RedisType::LIST) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -120,7 +120,7 @@ std::string ListCommands::cmdLrange(const std::vector<std::string>& args) {
     }
     
     RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::LIST) {
+    if (!value || value->type != RedisType::LIST) {
         return RESPFormatter::formatArray(std::vector<std::string>());
     }
     
@@ -162,7 +162,7 @@ std::string ListCommands::cmdLindex(const std::vector<std::string>& args) {
     }
     
     RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::LIST) {
+    if (!value || value->type != RedisType::LIST) {
         return RESPFormatter::formatNull();
     }
     
@@ -193,7 +193,7 @@ std::string ListCommands::cmdLset(const std::vector<std::string>& args) {
     }
     
     RedisValue* value = db.getValue(key);
-    if (!value || value->type != RedisValue::Type::LIST) {
+    if (!value || value->type != RedisType::LIST) {
         return RESPFormatter::formatError("ERR no such key");
     }
     

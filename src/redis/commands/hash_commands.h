@@ -7,7 +7,7 @@
 #include "resp/resp_formatter.h"
 #include "redis/database/redis_value.h"
 #include "utils/utility_functions.h"
-
+#include "enum/redis_type.h"
 class HashCommands {
 private:
     RedisDatabase& db;

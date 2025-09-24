@@ -56,7 +56,7 @@ std::string StringCommands::cmdGet(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::STRING) {
+    if (!value || value->type != RedisType::STRING) {
         return RESPFormatter::formatNull();
     }
     
@@ -106,11 +106,11 @@ std::string StringCommands::cmdType(const std::vector<std::string>& args) {
     }
     
     switch (value->type) {
-        case RedisValue::Type::STRING: return RESPFormatter::formatSimpleString("string");
-        case RedisValue::Type::LIST: return RESPFormatter::formatSimpleString("list");
-        case RedisValue::Type::SET: return RESPFormatter::formatSimpleString("set");
-        case RedisValue::Type::HASH: return RESPFormatter::formatSimpleString("hash");
-        case RedisValue::Type::ZSET: return RESPFormatter::formatSimpleString("zset");
+        case RedisType::STRING: return RESPFormatter::formatSimpleString("string");
+        case RedisType::LIST: return RESPFormatter::formatSimpleString("list");
+        case RedisType::SET: return RESPFormatter::formatSimpleString("set");
+        case RedisType::HASH: return RESPFormatter::formatSimpleString("hash");
+        case RedisType::ZSET: return RESPFormatter::formatSimpleString("zset");
         default: return RESPFormatter::formatSimpleString("unknown");
     }
 }
@@ -125,7 +125,7 @@ std::string StringCommands::cmdIncr(const std::vector<std::string>& args) {
     
     long long current = 0;
     if (value) {
-        if (value->type != RedisValue::Type::STRING) {
+        if (value->type != RedisType::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
         if (!UtilityFunctions::isInteger(value->string_value)) {
@@ -149,7 +149,7 @@ std::string StringCommands::cmdDecr(const std::vector<std::string>& args) {
     
     long long current = 0;
     if (value) {
-        if (value->type != RedisValue::Type::STRING) {
+        if (value->type != RedisType::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
         if (!UtilityFunctions::isInteger(value->string_value)) {
@@ -177,7 +177,7 @@ std::string StringCommands::cmdIncrBy(const std::vector<std::string>& args) {
     RedisValue* value = db.getValue(key);
     long long current = 0;
     if (value) {
-        if (value->type != RedisValue::Type::STRING) {
+        if (value->type != RedisType::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
         if (!UtilityFunctions::isInteger(value->string_value)) {
@@ -205,7 +205,7 @@ std::string StringCommands::cmdDecrBy(const std::vector<std::string>& args) {
     RedisValue* value = db.getValue(key);
     long long current = 0;
     if (value) {
-        if (value->type != RedisValue::Type::STRING) {
+        if (value->type != RedisType::STRING) {
             return RESPFormatter::formatError("ERR Operation against a key holding the wrong kind of value");
         }
         if (!UtilityFunctions::isInteger(value->string_value)) {
@@ -227,7 +227,7 @@ std::string StringCommands::cmdStrlen(const std::vector<std::string>& args) {
     const std::string& key = args[1];
     RedisValue* value = db.getValue(key);
     
-    if (!value || value->type != RedisValue::Type::STRING) {
+    if (!value || value->type != RedisType::STRING) {
         return RESPFormatter::formatInteger(0);
     }
     
@@ -245,7 +245,7 @@ std::string StringCommands::cmdAppend(const std::vector<std::string>& args) {
     RedisValue* value = db.getValue(key);
     std::string result;
     
-    if (value && value->type == RedisValue::Type::STRING) {
+    if (value && value->type == RedisType::STRING) {
         result = value->string_value + append_value;
     } else {
         result = append_value;
@@ -263,7 +263,7 @@ std::string StringCommands::cmdMget(const std::vector<std::string>& args) {
     std::vector<std::string> results;
     for (size_t i = 1; i < args.size(); i++) {
         RedisValue* value = db.getValue(args[i]);
-        if (value && value->type == RedisValue::Type::STRING) {
+        if (value && value->type == RedisType::STRING) {
             results.push_back(value->string_value);
         } else {
             results.push_back(""); // Will be formatted as NULL

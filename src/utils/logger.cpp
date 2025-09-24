@@ -1,6 +1,5 @@
 #include "logger.h"
 
-
 void logCommand(const std::vector<std::string>& args, size_t bytes_consumed) {
     std::cout << "🐛 [CMD] ";
     for (size_t i = 0; i < args.size(); ++i) {
