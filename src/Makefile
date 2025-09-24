@@ -33,6 +33,7 @@ $(BUILD_DIR)/$(TARGET): $(SRCS)
 
 clean:
 	rm -f $(BUILD_DIR)/$(TARGET)
+       clear
 
 run: $(BUILD_DIR)/$(TARGET)
 	./$(BUILD_DIR)/$(TARGET)
