@@ -33,7 +33,8 @@ TESTS = resp/test_resp_value.cpp \
 		redis/test_string_commands.cpp \
 		redis/test_set_commands.cpp \
 		redis/test_server_commands.cpp \
-		redis/test_list_commands.cpp
+		redis/test_list_commands.cpp \
+		redis/test_hash_commands.cpp 
 
 # Generar nombres de ejecutables en build
 TEST_TARGETS = $(TESTS:%.cpp=build/%)
