@@ -50,4 +50,4 @@ jobs:
       if: always()
       run: |
         cd test
-        make clean
+        rm -rf build/*
