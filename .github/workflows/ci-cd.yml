@@ -45,9 +45,3 @@ jobs:
         name: test-results
         path: test/build/
         retention-days: 7
-    
-    - name: Cleanup
-      if: always()
-      run: |
-        cd test
-        rm -rf build/*
