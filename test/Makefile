@@ -1,5 +1,5 @@
 # Compilador y flags
-CXX = g++
+CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread -I../src
 LDFLAGS = -pthread -lgtest -lgtest_main -lgmock
 

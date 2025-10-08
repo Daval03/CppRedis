@@ -1,6 +1,6 @@
 
 # Compilador y flags
-CXX = g++
+CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread -I.
 
 # Nombre del ejecutable
