@@ -1,7 +1,7 @@
 
 # Compilador y flags
 CXX ?= g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -pthread -I.
+CXXFLAGS = -std=c++17 -fsanitize=address -Wall -Wextra -O2 -pthread -I. 
 
 # Nombre del ejecutable
 TARGET = cppredis
